@@ -28,6 +28,8 @@ fi
 
 npm ci --prefix "$project_root/ui"
 cargo test --manifest-path "$project_root/ui/src-tauri/Cargo.toml" --locked
+cmake -E remove_directory "$project_root/ui/src-tauri/target/release/bundle/rpm"
+cmake -E remove_directory "$project_root/ui/src-tauri/target/release/bundle/deb"
 npm run tauri --prefix "$project_root/ui" -- build \
   --config src-tauri/tauri.bundle.conf.json --bundles rpm,deb
 
@@ -48,7 +50,7 @@ limit=$((2 * 1024 * 1024 * 1024))
 for artifact in "$release_dir"/*.rpm "$release_dir"/*.deb; do
   size="$(stat -c %s "$artifact")"
   if (( size >= limit )); then
-    printf 'Release asset exceeds GitHub 2 GiB limit: %s\n' "$artifact" >&2
+    printf 'Release artifact exceeds the 2 GiB distribution limit: %s\n' "$artifact" >&2
     exit 3
   fi
 done

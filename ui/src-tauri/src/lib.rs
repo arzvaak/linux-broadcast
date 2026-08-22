@@ -23,6 +23,7 @@ struct SystemStatus {
     architecture: String,
     model_ready: bool,
     plugin_ready: bool,
+    available_effects: Vec<String>,
 }
 
 #[derive(Clone)]
@@ -216,14 +217,30 @@ fn architecture_for(capability: &str) -> Result<&'static str, String> {
         "8.6" => Ok("sm_86"),
         "8.9" => Ok("sm_89"),
         "12.0" => Ok("sm_120"),
-        value => Err(format!("No BNR 2.0 model mapping for compute capability {value}")),
+        value => Err(format!("No NVIDIA AFX package mapping for compute capability {value}")),
     }
 }
 
-fn model_path(sdk: &Path, architecture: &str) -> PathBuf {
-    sdk.join("features/denoiser/models")
-        .join(architecture)
-        .join("denoiser_v2_48k.trtpkg")
+fn effect_model_path(sdk: &Path, architecture: &str, mode: &str) -> Option<PathBuf> {
+    let (feature, model) = match mode {
+        "noise" => ("denoiser", "denoiser_48k.trtpkg"),
+        "bnr2" => ("denoiser", "denoiser_v2_48k.trtpkg"),
+        "room_echo" => ("dereverb", "dereverb_48k.trtpkg"),
+        "noise_room_echo" => ("dereverb_denoiser", "dereverb_denoiser_48k.trtpkg"),
+        "studio_voice" => ("studio_voice", "studio_voice_low_latency_48k.trtpkg"),
+        _ => return None,
+    };
+    Some(sdk.join("features").join(feature).join("models").join(architecture).join(model))
+}
+
+fn available_effects(sdk: &Path, architecture: &str) -> Vec<String> {
+    ["noise", "bnr2", "room_echo", "noise_room_echo", "studio_voice"]
+        .into_iter()
+        .filter(|mode| {
+            effect_model_path(sdk, architecture, mode).is_some_and(|path| path.is_file())
+        })
+        .map(str::to_owned)
+        .collect()
 }
 
 fn parse_gpu_targets(raw: &str, sdk: Option<&Path>) -> Vec<GpuTarget> {
@@ -237,7 +254,7 @@ fn parse_gpu_targets(raw: &str, sdk: Option<&Path>) -> Vec<GpuTarget> {
             }
             let compute_capability = fields.next()?.to_owned();
             let architecture = architecture_for(&compute_capability).ok()?;
-            let model_ready = sdk.is_some_and(|root| model_path(root, architecture).exists());
+            let model_ready = sdk.is_some_and(|root| !available_effects(root, architecture).is_empty());
             Some(GpuTarget {
                 index,
                 name,
@@ -498,14 +515,17 @@ fn module_command(intensity: f32, plugin: &Path) -> String {
 }
 
 fn runtime_library_path(sdk: &Path) -> String {
-    let mut paths = vec![
+    let mut paths: Vec<PathBuf> = [
         sdk.join("nvafx/lib"),
         sdk.join("features/denoiser/lib"),
         sdk.join("features/dereverb/lib"),
         sdk.join("features/dereverb_denoiser/lib"),
         sdk.join("features/studio_voice/lib"),
         sdk.join("external/cuda/lib"),
-    ];
+    ]
+    .into_iter()
+    .filter(|path| path.is_dir())
+    .collect();
     if let Some(existing) = env::var_os("LD_LIBRARY_PATH") {
         paths.extend(env::split_paths(&existing));
     }
@@ -642,12 +662,16 @@ fn stop_locked(process: &mut Option<ServiceProcess>) {
 #[tauri::command]
 fn system_status() -> Result<SystemStatus, String> {
     let gpu = selected_gpu()?;
+    let effects = sdk_root()
+        .map(|sdk| available_effects(&sdk, gpu.architecture))
+        .unwrap_or_default();
     Ok(SystemStatus {
         gpu_name: gpu.name,
         compute_capability: gpu.compute_capability,
         architecture: gpu.architecture.to_owned(),
-        model_ready: gpu.model_ready,
+        model_ready: !effects.is_empty(),
         plugin_ready: plugin_path().is_ok(),
+        available_effects: effects,
     })
 }
 
@@ -703,6 +727,17 @@ fn start_processing(
     }
     validate_effect_mode(&effect_mode)?;
     validate_frame_ms(&effect_mode, frame_ms)?;
+    let gpu = selected_gpu()?;
+    let sdk = sdk_root()?;
+    if !available_effects(&sdk, gpu.architecture)
+        .iter()
+        .any(|mode| mode == &effect_mode)
+    {
+        return Err(format!(
+            "The {effect_mode} NVIDIA AFX model is not installed for {}",
+            gpu.architecture
+        ));
+    }
     let microphone = list_physical_microphones()?
         .into_iter()
         .find(|microphone| microphone.name == source_name)
@@ -969,7 +1004,12 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::{
-        architecture_for, choose_gpu, parse_gpu_targets, spa_quote, validate_frame_ms, GpuTarget,
+        architecture_for, available_effects, choose_gpu, parse_gpu_targets, spa_quote,
+        validate_frame_ms, GpuTarget,
+    };
+    use std::{
+        fs,
+        time::{SystemTime, UNIX_EPOCH},
     };
 
     #[test]
@@ -993,6 +1033,25 @@ mod tests {
         assert!(validate_frame_ms("studio_voice", 10).is_ok());
         assert!(validate_frame_ms("studio_voice", 20).is_err());
         assert!(validate_frame_ms("noise", 40).is_err());
+    }
+
+    #[test]
+    fn exposes_only_effects_with_installed_models() {
+        let suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let sdk = std::env::temp_dir().join(format!("linux-broadcast-test-{suffix}"));
+        let model = sdk
+            .join("features/dereverb_denoiser/models/sm_89")
+            .join("dereverb_denoiser_48k.trtpkg");
+        fs::create_dir_all(model.parent().unwrap()).unwrap();
+        fs::write(&model, []).unwrap();
+
+        assert_eq!(available_effects(&sdk, "sm_89"), ["noise_room_echo"]);
+        assert!(available_effects(&sdk, "sm_86").is_empty());
+
+        fs::remove_dir_all(sdk).unwrap();
     }
 
     #[test]

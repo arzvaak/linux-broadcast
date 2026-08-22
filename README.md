@@ -3,7 +3,7 @@
   <h1>Linux Broadcast</h1>
   <p>NVIDIA Broadcast-style voice processing for Linux, powered by NVIDIA AFX.</p>
   <p>
-    <a href="https://github.com/arzvaak/linux-broadcast/releases"><img src="https://img.shields.io/github/v/release/arzvaak/linux-broadcast?include_prereleases" alt="Release"></a>
+    <img src="https://img.shields.io/badge/package-RPM%20%7C%20DEB-555555" alt="RPM and DEB packages">
     <a href="LICENSE"><img src="https://img.shields.io/github/license/arzvaak/linux-broadcast" alt="MIT License"></a>
     <img src="https://img.shields.io/badge/platform-Linux-111111" alt="Linux">
     <img src="https://img.shields.io/badge/GPU-NVIDIA%20RTX-76B900" alt="NVIDIA RTX">
@@ -11,10 +11,10 @@
 </div>
 
 Linux Broadcast is a native NVIDIA Audio Effects SDK (AFX) voice processor for
-PipeWire with a minimal Tauri desktop interface. It runs NVIDIA's own Noise
-Removal, experimental **BNR 2.0**, Room Echo Removal, combined Noise + Room
-Echo, and Studio Voice Low Latency models. There are no substitute denoising
-backends.
+PipeWire with a minimal Tauri desktop interface. The codebase supports NVIDIA's
+Noise Removal, experimental **BNR 2.0**, Room Echo Removal, combined Noise +
+Room Echo, and Studio Voice Low Latency models. There are no substitute
+denoising backends.
 
 ## Features
 
@@ -31,13 +31,10 @@ backends.
 ## Installation
 
 Linux Broadcast requires an RTX GPU, the proprietary NVIDIA driver, and
-PipeWire. Official release packages contain the NVIDIA runtime and RTX models
-needed by the application under NVIDIA's applicable license terms.
-
-Packaged versions are published on the
-[GitHub Releases](https://github.com/arzvaak/linux-broadcast/releases) page.
-If a release does not provide a package for your distribution, build it using
-the instructions below.
+PipeWire. Prebuilt packages contain the licensed NVIDIA runtime and one
+architecture-specific **Noise + Room Echo** model. They intentionally omit
+cuDNN, separate Noise Removal and Room Echo models, BNR 2.0, and Studio Voice.
+The application only offers effects whose models are installed.
 
 Choose the release matching the installed GPU generation:
 
@@ -167,14 +164,14 @@ processed stream as `linux_broadcast.source`. Stopping the effect or quitting
 from the tray removes the virtual microphone. Closing the window keeps it
 active when **Run in background** is enabled.
 
-The UI exposes the input source, effect mode, intensity, headphone monitoring,
-GPU architecture, and model/plugin readiness. Monitoring is off by default to
-prevent speaker feedback. Easy Effects is used as the monitoring source when
-available.
+The UI exposes the input source, installed effect modes, intensity, headphone
+monitoring, GPU architecture, and model/plugin readiness. Monitoring is off by
+default to prevent speaker feedback. Easy Effects is used as the monitoring
+source when available.
 
-SDK-specific VAD and frame sizing live in the collapsed Advanced view. A fresh
-installation starts with Noise Removal, 75% intensity, VAD off, and 20 ms
-frames. Every effect remembers its own tuning.
+SDK-specific VAD and frame sizing live in the collapsed Advanced view. A
+prebuilt installation starts with Noise + Room Echo, 70% intensity, VAD off,
+and 20 ms frames. Every installed effect remembers its own tuning.
 
 The Settings page contains the two lifecycle controls:
 
@@ -247,8 +244,10 @@ The application automatically uses the plugin at
 ## Build RPM and DEB packages
 
 Each release package contains one GPU generation so downloads do not carry
-models that cannot run on the target machine. NVIDIA files remain outside Git
-and are read from `AFX_SDK_ROOT` only while packaging.
+models that cannot run on the target machine. The compact profile contains the
+combined 48 kHz Noise + Room Echo model and the runtime libraries it loads. It
+does not contain cuDNN. NVIDIA files remain outside Git and are read from
+`AFX_SDK_ROOT` only while packaging.
 
 Build the RPM and DEB for a generation after installing its model variant into
 the SDK tree:
@@ -274,8 +273,10 @@ build/releases/<version>/<series>/linux-broadcast-<version>-<series>.x86_64.rpm
 build/releases/<version>/<series>/linux-broadcast_<version>_<series>_amd64.deb
 ```
 
-The staging script copies only runtime files, models, and their license notices.
-NGC configuration and credentials are never read into the package.
+The staging script copies only the combined model, required runtime libraries,
+and applicable license notices. It fails if cuDNN or a credential-like file is
+found in the staged tree. NGC configuration and credentials are never read into
+the package.
 
 ## Primary references
 

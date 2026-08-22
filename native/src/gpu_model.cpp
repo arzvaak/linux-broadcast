@@ -14,7 +14,7 @@ GpuModelTarget target_for_compute_capability(const int major, const int minor) {
   if (major == 8 && minor == 6) return {"sm_86"};
   if (major == 8 && minor == 9) return {"sm_89"};
   if (major == 12 && minor == 0) return {"sm_120"};
-  throw std::runtime_error("No BNR 2.0 package mapping for compute capability " +
+  throw std::runtime_error("No NVIDIA AFX package mapping for compute capability " +
                            std::to_string(major) + "." + std::to_string(minor));
 }
 

@@ -7,6 +7,7 @@ type SystemStatus = {
   architecture: string;
   modelReady: boolean;
   pluginReady: boolean;
+  availableEffects: string[];
 };
 
 type Microphone = { id: number; name: string; description: string; isDefault: boolean };
@@ -122,6 +123,14 @@ const effectNames: Record<string, string> = {
   studio_voice: "Studio Voice",
 };
 
+const effectLabels: Record<string, string> = {
+  noise: "Noise Removal · calls, fans & clicks",
+  bnr2: "BNR 2.0 · experimental speech cleanup",
+  room_echo: "Room Echo · untreated rooms",
+  noise_room_echo: "Noise + Room Echo · noisy rooms",
+  studio_voice: "Studio Voice · improve mic quality",
+};
+
 const effectGuides: Record<string, string> = {
   noise: "Best default for calls — removes fans, keyboard clicks and everyday background noise.",
   bnr2: "Experimental cleanup for ASR and recorded speech — quiet noises overlapping speech may get through.",
@@ -201,8 +210,17 @@ function showStatus(status: SystemStatus) {
   document.querySelector("#gpu")!.textContent = status.gpuName;
   document.querySelector("#architecture")!.textContent = `${status.architecture} · CC ${status.computeCapability}`;
   const model = document.querySelector("#modelState")!;
-  systemReady = status.modelReady && status.pluginReady;
-  model.textContent = !status.modelReady ? "NVIDIA AFX package required" : status.pluginReady ? "AFX effects ready" : "Native plugin requires build";
+  const effectSelect = document.querySelector<HTMLSelectElement>("#effect")!;
+  effectSelect.replaceChildren(
+    ...status.availableEffects.map((mode) => new Option(effectLabels[mode] ?? mode, mode)),
+  );
+  effectSelect.disabled = status.availableEffects.length === 0;
+  systemReady = status.modelReady && status.pluginReady && status.availableEffects.length > 0;
+  model.textContent = !status.modelReady
+    ? "NVIDIA AFX package required"
+    : status.pluginReady
+      ? `${status.availableEffects.length} AFX ${status.availableEffects.length === 1 ? "effect" : "effects"} ready`
+      : "Native plugin requires build";
   model.className = systemReady ? "ready" : "warning";
   const power = document.querySelector<HTMLButtonElement>("#power")!;
   power.disabled = !systemReady;
@@ -300,10 +318,11 @@ async function load() {
       ?? outputs[0]?.name;
     if (monitorOutput) outputSelect.value = monitorOutput;
     const effectSelect = document.querySelector<HTMLSelectElement>("#effect")!;
-    const rememberedEffect = window.localStorage.getItem("linux-broadcast.effect") ?? "noise";
+    const rememberedEffect = window.localStorage.getItem("linux-broadcast.effect") ?? "noise_room_echo";
+    const fallbackEffect = status.availableEffects[0] ?? "noise_room_echo";
     effectSelect.value = service.running
       ? service.effectMode
-      : effectNames[rememberedEffect] ? rememberedEffect : "noise";
+      : status.availableEffects.includes(rememberedEffect) ? rememberedEffect : fallbackEffect;
     const effect = effectSelect.value;
     loadRememberedTuning(effect);
     if (service.running) {
