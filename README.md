@@ -5,6 +5,39 @@ PipeWire with a Tauri desktop interface. It runs NVIDIA's own Noise Removal,
 experimental **BNR 2.0**, Room Echo Removal, combined Noise + Room Echo, and
 Studio Voice Low Latency models. There are no substitute denoising backends.
 
+## Installation
+
+Linux Broadcast requires an RTX GPU, the proprietary NVIDIA driver, PipeWire,
+and a licensed NVIDIA AFX 2.x SDK installation. The RPM and DEB contain the
+open-source application and native PipeWire plugin; NVIDIA libraries and models
+must be installed separately as described below.
+
+Packaged versions are published on the
+[GitHub Releases](https://github.com/arzvaak/linux-broadcast/releases) page.
+If a release does not provide a package for your distribution, build it using
+the instructions below.
+
+### Fedora, RHEL, and compatible distributions
+
+```bash
+sudo dnf install "./Linux Broadcast-<version>-1.x86_64.rpm"
+```
+
+Remove it with `sudo dnf remove linux-broadcast`.
+
+### Debian, Ubuntu, and compatible distributions
+
+```bash
+sudo apt install "./Linux Broadcast_<version>_amd64.deb"
+```
+
+Remove it with `sudo apt remove linux-broadcast`.
+
+The installed application is available from the desktop menu or as
+`linux-broadcast`. Its default SDK location is
+`~/.local/share/linux-broadcast/nvidia/current`. Set `AFX_SDK_ROOT` when
+launching the application if the SDK is stored elsewhere.
+
 ## GPU and model selection
 
 The application selects an architecture-specific TensorRT model from the GPU's
@@ -115,24 +148,83 @@ The release build can also be installed or removed from the terminal:
 The service installs only into the current user's `~/.local` and
 `~/.config/systemd/user` directories; it does not require root.
 
-Build the native plugin first, then the release wrapper:
+## Build from source
+
+The source build requires CMake 3.20 or newer, a C++20 compiler, LADSPA
+headers, Node.js 20.19 or newer, npm, the stable Rust toolchain, and the Linux
+dependencies required by Tauri 2.
+
+Fedora:
 
 ```bash
+sudo dnf install gcc-c++ cmake ladspa-devel nodejs npm rust cargo \
+  pkgconf-pkg-config webkit2gtk4.1-devel openssl-devel \
+  libappindicator-gtk3-devel librsvg2-devel libxdo-devel pipewire-utils
+```
+
+Debian or Ubuntu:
+
+```bash
+sudo apt update
+sudo apt install build-essential cmake ladspa-sdk pkg-config curl wget file \
+  libwebkit2gtk-4.1-dev libssl-dev libayatana-appindicator3-dev \
+  librsvg2-dev libxdo-dev pipewire-bin
+```
+
+Install a supported Node.js release and the stable Rust toolchain if the
+distribution versions do not meet the requirements above. Then clone the
+repository, configure the licensed SDK, and build the native plugin followed by
+the desktop application:
+
+```bash
+git clone https://github.com/arzvaak/linux-broadcast.git
+cd linux-broadcast
+
+export AFX_SDK_ROOT="$HOME/.local/share/linux-broadcast/nvidia/current"
 cmake -S native -B build/native-cmake \
-  -DAFX_SDK_ROOT="$HOME/.local/share/linux-broadcast/nvidia/current"
-cmake --build build/native-cmake -j
+  -DAFX_SDK_ROOT="$AFX_SDK_ROOT" \
+  -DBUILD_TESTING=ON
+cmake --build build/native-cmake --parallel
+ctest --test-dir build/native-cmake --output-on-failure
+
 npm ci --prefix ui
-npm run tauri --prefix ui -- build
+npm run build --prefix ui
+cargo test --manifest-path ui/src-tauri/Cargo.toml --locked
+npm run tauri --prefix ui -- build --no-bundle
 ./ui/src-tauri/target/release/linux-broadcast
 ```
 
-The Tauri build produces RPM and DEB packages under
-`ui/src-tauri/target/release/bundle/`. The packages include the native wrapper,
-but not NVIDIA's licensed SDK libraries or models.
-
-The application looks for the native plugin at
+The application automatically uses the plugin at
 `build/native-cmake/liblinux_broadcast_afx_ladspa.so`. `AFX_SDK_ROOT` and
-`LINUX_BROADCAST_PLUGIN` can override the default SDK and plugin paths.
+`LINUX_BROADCAST_PLUGIN` override the default SDK and plugin paths.
+
+## Build RPM and DEB packages
+
+Build the native plugin first using the source instructions above. The Tauri
+configuration already includes the plugin and targets both package formats.
+
+Build both packages:
+
+```bash
+npm run tauri --prefix ui -- build
+```
+
+Or build one format at a time:
+
+```bash
+npm run tauri --prefix ui -- build --bundles rpm
+npm run tauri --prefix ui -- build --bundles deb
+```
+
+The resulting files are written to:
+
+```text
+ui/src-tauri/target/release/bundle/rpm/Linux Broadcast-<version>-1.x86_64.rpm
+ui/src-tauri/target/release/bundle/deb/Linux Broadcast_<version>_amd64.deb
+```
+
+The packages include the application and native plugin, but never NVIDIA's
+licensed SDK libraries, models, or NGC credentials.
 
 ## Primary references
 
