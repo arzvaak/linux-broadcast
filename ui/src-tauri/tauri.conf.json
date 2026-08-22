@@ -1,0 +1,49 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Linux Broadcast",
+  "version": "0.1.0",
+  "identifier": "com.arzvak.linuxbroadcast",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Linux Broadcast",
+        "width": 680,
+        "height": 800,
+        "minWidth": 560,
+        "minHeight": 740,
+        "resizable": true,
+        "decorations": true,
+        "transparent": false
+      }
+    ],
+    "security": {
+      "csp": {
+        "default-src": "'self'",
+        "connect-src": "ipc: http://ipc.localhost",
+        "img-src": "'self' asset: http://asset.localhost",
+        "style-src": "'self'"
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["deb", "rpm"],
+    "category": "Music",
+    "shortDescription": "NVIDIA AFX voice processing for PipeWire",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png"
+    ],
+    "resources": {
+      "../../build/native-cmake/liblinux_broadcast_afx_ladspa.so": "lib/linux-broadcast/liblinux_broadcast_afx_ladspa.so"
+    }
+  }
+}

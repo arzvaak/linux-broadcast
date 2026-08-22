@@ -1,0 +1,21 @@
+[package]
+name = "linux-broadcast"
+version = "0.1.0"
+description = "NVIDIA AFX BNR 2.0 voice processing for Linux"
+authors = ["Ayush"]
+edition = "2021"
+
+[lib]
+name = "linux_broadcast_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2", features = ["tray-icon"] }
+
+[target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
+tauri-plugin-single-instance = "2"

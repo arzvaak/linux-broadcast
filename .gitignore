@@ -1,0 +1,11 @@
+/build/
+/ui/dist/
+/ui/node_modules/
+/ui/src-tauri/target/
+.env
+*.trtpkg
+libnv_audiofx.so
+*.installing
+*.installing-*
+*.log
+.DS_Store
