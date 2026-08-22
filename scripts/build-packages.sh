@@ -38,4 +38,18 @@ mv "$project_root/ui/src-tauri/target/release/bundle/rpm/Linux Broadcast-$versio
   "$release_dir/linux-broadcast-$version-$series.x86_64.rpm"
 mv "$project_root/ui/src-tauri/target/release/bundle/deb/Linux Broadcast_${version}_amd64.deb" \
   "$release_dir/linux-broadcast_${version}_${series}_amd64.deb"
+
+(
+  cd "$release_dir"
+  sha256sum ./*.rpm ./*.deb > SHA256SUMS
+)
+
+limit=$((2 * 1024 * 1024 * 1024))
+for artifact in "$release_dir"/*.rpm "$release_dir"/*.deb; do
+  size="$(stat -c %s "$artifact")"
+  if (( size >= limit )); then
+    printf 'Release asset exceeds GitHub 2 GiB limit: %s\n' "$artifact" >&2
+    exit 3
+  fi
+done
 printf 'Release packages written to %s\n' "$release_dir"

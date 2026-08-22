@@ -1,9 +1,32 @@
-# Linux Broadcast
+<div align="center">
+  <img src="ui/src-tauri/icons/icon.png" alt="Linux Broadcast" width="88">
+  <h1>Linux Broadcast</h1>
+  <p>NVIDIA Broadcast-style voice processing for Linux, powered by NVIDIA AFX.</p>
+  <p>
+    <a href="https://github.com/arzvaak/linux-broadcast/releases"><img src="https://img.shields.io/github/v/release/arzvaak/linux-broadcast?include_prereleases" alt="Release"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/github/license/arzvaak/linux-broadcast" alt="MIT License"></a>
+    <img src="https://img.shields.io/badge/platform-Linux-111111" alt="Linux">
+    <img src="https://img.shields.io/badge/GPU-NVIDIA%20RTX-76B900" alt="NVIDIA RTX">
+  </p>
+</div>
 
 Linux Broadcast is a native NVIDIA Audio Effects SDK (AFX) voice processor for
-PipeWire with a Tauri desktop interface. It runs NVIDIA's own Noise Removal,
-experimental **BNR 2.0**, Room Echo Removal, combined Noise + Room Echo, and
-Studio Voice Low Latency models. There are no substitute denoising backends.
+PipeWire with a minimal Tauri desktop interface. It runs NVIDIA's own Noise
+Removal, experimental **BNR 2.0**, Room Echo Removal, combined Noise + Room
+Echo, and Studio Voice Low Latency models. There are no substitute denoising
+backends.
+
+## Features
+
+- NVIDIA Noise Removal and experimental BNR 2.0
+- Room Echo Removal and combined Noise + Room Echo processing
+- Studio Voice Low Latency
+- Automatic RTX 20, 30, 40, and 50-series model selection
+- A persistent `Linux Broadcast Microphone` for PipeWire applications
+- Physical microphone and monitoring-output selection
+- Easy Effects-compatible routing
+- Per-effect intensity, VAD, and frame-size controls
+- Background operation, system tray, and start-at-login support
 
 ## Installation
 
@@ -16,10 +39,19 @@ Packaged versions are published on the
 If a release does not provide a package for your distribution, build it using
 the instructions below.
 
+Choose the release matching the installed GPU generation:
+
+| Download | GPUs |
+| --- | --- |
+| `RTX 20` | GeForce RTX 20 and Quadro RTX |
+| `RTX 30` | GeForce RTX 30 and RTX A-series |
+| `RTX 40` | GeForce RTX 40 and RTX Ada |
+| `RTX 50` | GeForce RTX 50 and RTX PRO Blackwell |
+
 ### Fedora, RHEL, and compatible distributions
 
 ```bash
-sudo dnf install "./Linux Broadcast-<version>-1.x86_64.rpm"
+sudo dnf install ./linux-broadcast-<version>-rtx<series>.x86_64.rpm
 ```
 
 Remove it with `sudo dnf remove linux-broadcast`.
@@ -27,7 +59,7 @@ Remove it with `sudo dnf remove linux-broadcast`.
 ### Debian, Ubuntu, and compatible distributions
 
 ```bash
-sudo apt install "./Linux Broadcast_<version>_amd64.deb"
+sudo apt install ./linux-broadcast_<version>_rtx<series>_amd64.deb
 ```
 
 Remove it with `sudo apt remove linux-broadcast`.
@@ -253,3 +285,37 @@ NGC configuration and credentials are never read into the package.
 - [Query supported AFX frame sizes](https://docs.nvidia.com/maxine/afx/latest/UseAFXInApps/GetParametersOfAnEffect.html)
 - [Studio Voice modes and latency](https://docs.nvidia.com/maxine/afx/2.1.0/AboutTheEffects/AboutStudioVoiceEffect.html)
 - [Official AFX samples](https://github.com/NVIDIA-Maxine/AFX-SDK-Samples)
+
+## About me
+
+I'm Ayush, also known as [Arzvak](https://github.com/arzvaak). I study electrical
+and electronics engineering and build software around the problems I run into.
+I started Linux Broadcast because Linux users with RTX hardware should have a
+native, polished voice-processing tool instead of giving up the NVIDIA hardware
+they already own.
+
+## Contributing
+
+Bug reports, compatibility results, documentation improvements, and focused
+pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before making
+a change. Please report security issues through the process in
+[SECURITY.md](SECURITY.md), not a public issue.
+
+## License
+
+The Linux Broadcast source code is available under the [MIT License](LICENSE).
+NVIDIA AFX libraries and models remain NVIDIA software and are distributed in
+release packages under their accompanying NVIDIA license terms. They are not
+part of the MIT-licensed source repository.
+
+Linux Broadcast is an independent project and is not sponsored or endorsed by
+NVIDIA Corporation. NVIDIA, RTX, and NVIDIA Broadcast are trademarks of NVIDIA
+Corporation.
+
+## Acknowledgements
+
+- [NVIDIA Maxine Audio Effects SDK](https://developer.nvidia.com/maxine)
+- [PipeWire](https://pipewire.org/) for the Linux audio graph
+- [Tauri](https://tauri.app/) for the desktop application framework
+- [BluCast](https://github.com/Andrei9383/Blucast) for demonstrating another
+  community-built Maxine workflow on Linux
