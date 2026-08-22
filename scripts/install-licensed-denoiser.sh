@@ -7,7 +7,12 @@ if [[ -z "${NGC_API_KEY:-}" && -f "${HOME}/.ngc/config" ]]; then
   NGC_API_KEY="$(awk -F' = ' '/^apikey = / {print $2}' "${HOME}/.ngc/config")"
   export NGC_API_KEY
 fi
-: "${NGC_API_KEY:?Configure the NVIDIA NGC CLI or set NGC_API_KEY}"
+if [[ -z "${NGC_API_KEY:-}" && -t 0 ]]; then
+  read -rsp "NVIDIA NGC personal key: " NGC_API_KEY
+  printf '\n'
+  export NGC_API_KEY
+fi
+: "${NGC_API_KEY:?Configure the NVIDIA NGC CLI, set NGC_API_KEY, or run this script interactively}"
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 detector_output="$("$script_dir/detect-gpu.sh")"

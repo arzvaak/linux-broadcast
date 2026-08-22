@@ -299,6 +299,12 @@ fn sdk_root() -> Result<PathBuf, String> {
     if let Some(configured) = env::var_os("AFX_SDK_ROOT") {
         return Ok(PathBuf::from(configured));
     }
+    if let Some(bundled) = env::var_os("LINUX_BROADCAST_BUNDLED_SDK") {
+        let path = PathBuf::from(bundled);
+        if path.is_dir() {
+            return Ok(path);
+        }
+    }
     env::var_os("HOME")
         .map(PathBuf::from)
         .map(|home| home.join(".local/share/linux-broadcast/nvidia/current"))
@@ -892,6 +898,10 @@ pub fn run() {
                     .join("lib/linux-broadcast/liblinux_broadcast_afx_ladspa.so");
                 if bundled_plugin.is_file() {
                     env::set_var("LINUX_BROADCAST_BUNDLED_PLUGIN", bundled_plugin);
+                }
+                let bundled_sdk = resource_dir.join("lib/linux-broadcast/nvidia");
+                if bundled_sdk.join("nvafx/lib/libnv_audiofx.so").is_file() {
+                    env::set_var("LINUX_BROADCAST_BUNDLED_SDK", bundled_sdk);
                 }
             }
             let menu = MenuBuilder::new(app)

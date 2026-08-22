@@ -7,10 +7,9 @@ Studio Voice Low Latency models. There are no substitute denoising backends.
 
 ## Installation
 
-Linux Broadcast requires an RTX GPU, the proprietary NVIDIA driver, PipeWire,
-and a licensed NVIDIA AFX 2.x SDK installation. The RPM and DEB contain the
-open-source application and native PipeWire plugin; NVIDIA libraries and models
-must be installed separately as described below.
+Linux Broadcast requires an RTX GPU, the proprietary NVIDIA driver, and
+PipeWire. Official release packages contain the NVIDIA runtime and RTX models
+needed by the application under NVIDIA's applicable license terms.
 
 Packaged versions are published on the
 [GitHub Releases](https://github.com/arzvaak/linux-broadcast/releases) page.
@@ -34,9 +33,9 @@ sudo apt install "./Linux Broadcast_<version>_amd64.deb"
 Remove it with `sudo apt remove linux-broadcast`.
 
 The installed application is available from the desktop menu or as
-`linux-broadcast`. Its default SDK location is
-`~/.local/share/linux-broadcast/nvidia/current`. Set `AFX_SDK_ROOT` when
-launching the application if the SDK is stored elsewhere.
+`linux-broadcast`. Release packages use their bundled runtime automatically.
+Source builds use `AFX_SDK_ROOT` or
+`~/.local/share/linux-broadcast/nvidia/current`.
 
 ## GPU and model selection
 
@@ -67,8 +66,9 @@ retains CUDA device 0 and loads the matching model directly.
 
 ## Licensed AFX installation
 
-Set `AFX_SDK_ROOT` to an extracted AFX 2.x SDK. Models and NVIDIA libraries are
-never committed or redistributed by this project.
+Set `AFX_SDK_ROOT` to an extracted AFX 2.x SDK. NVIDIA files are never committed
+to Git. Release packages stage the permitted runtime subset and applicable
+license notices directly from this directory.
 
 ```text
 $AFX_SDK_ROOT/
@@ -90,7 +90,21 @@ export AFX_SDK_ROOT=/path/to/Audio_Effects_SDK
 ```
 
 The installer reads the standard NGC CLI credential store when `NGC_API_KEY` is
-not set.
+not set. When run in a terminal without either configuration, it prompts for a
+personal key without echoing or saving it.
+
+To create an NGC personal key:
+
+1. Sign in to [NVIDIA NGC](https://org.ngc.nvidia.com/setup/personal-keys).
+2. Select **Generate Personal Key**, give it a descriptive name, and grant the
+   catalog access required by the AFX resources in your organization.
+3. Copy the key when NVIDIA displays it. NVIDIA does not display it again.
+4. Run `./scripts/install-licensed-denoiser.sh` and paste the key at the secure
+   prompt, or configure it with `ngc config set`.
+
+Release RPM and DEB files already contain their targeted models and do not ask
+for an NGC key during package installation. The key flow is for source builds,
+custom architecture packages, and future models that are not in a release.
 
 ## Native engine
 
@@ -200,31 +214,36 @@ The application automatically uses the plugin at
 
 ## Build RPM and DEB packages
 
-Build the native plugin first using the source instructions above. The Tauri
-configuration already includes the plugin and targets both package formats.
+Each release package contains one GPU generation so downloads do not carry
+models that cannot run on the target machine. NVIDIA files remain outside Git
+and are read from `AFX_SDK_ROOT` only while packaging.
 
-Build both packages:
-
-```bash
-npm run tauri --prefix ui -- build
-```
-
-Or build one format at a time:
+Build the RPM and DEB for a generation after installing its model variant into
+the SDK tree:
 
 ```bash
-npm run tauri --prefix ui -- build --bundles rpm
-npm run tauri --prefix ui -- build --bundles deb
+export AFX_SDK_ROOT=/path/to/Audio_Effects_SDK
+./scripts/build-packages.sh rtx40
 ```
+
+Supported release targets are:
+
+| Release target | GPUs | Model architecture |
+| --- | --- | --- |
+| `rtx20` | RTX 20 and Quadro RTX | `sm_75` |
+| `rtx30` | RTX 30 and RTX A-series | `sm_86` |
+| `rtx40` | RTX 40 and RTX Ada | `sm_89` |
+| `rtx50` | RTX 50 and RTX PRO Blackwell | `sm_120` |
 
 The resulting files are written to:
 
 ```text
-ui/src-tauri/target/release/bundle/rpm/Linux Broadcast-<version>-1.x86_64.rpm
-ui/src-tauri/target/release/bundle/deb/Linux Broadcast_<version>_amd64.deb
+build/releases/<version>/<series>/linux-broadcast-<version>-<series>.x86_64.rpm
+build/releases/<version>/<series>/linux-broadcast_<version>_<series>_amd64.deb
 ```
 
-The packages include the application and native plugin, but never NVIDIA's
-licensed SDK libraries, models, or NGC credentials.
+The staging script copies only runtime files, models, and their license notices.
+NGC configuration and credentials are never read into the package.
 
 ## Primary references
 

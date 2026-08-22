@@ -1,0 +1,8 @@
+{
+  "bundle": {
+    "resources": {
+      "../../build/native-cmake/liblinux_broadcast_afx_ladspa.so": "lib/linux-broadcast/liblinux_broadcast_afx_ladspa.so",
+      "../../build/nvidia-runtime/": "lib/linux-broadcast/nvidia/"
+    }
+  }
+}
