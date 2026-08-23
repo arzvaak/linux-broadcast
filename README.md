@@ -32,27 +32,27 @@ denoising backends.
 ## Installation
 
 Linux Broadcast requires an RTX GPU, the proprietary NVIDIA driver, PipeWire,
-and WebKitGTK 4.1. The public preview provides uncompressed portable bundles
-from [GitHub Releases](https://github.com/arzvaak/linux-broadcast/releases).
-Each bundle contains the app, native plugin, licensed NVIDIA runtime, and one
-architecture-specific **Noise + Room Echo** model. The bundles intentionally
-omit cuDNN, separate Noise Removal and Room Echo models, BNR 2.0, and Studio
-Voice. The application only offers effects whose models are installed.
+and WebKitGTK 4.1. Complete generation-specific RPM, DEB, and portable bundles
+are available from the [download homepage](https://arzvaak.github.io/linux-broadcast/).
+Each bundle contains the app, native plugin, NVIDIA AFX runtime, CUDA,
+TensorRT, Noise Removal, BNR 2.0, Room Echo, combined Noise + Room Echo, and
+low-latency Studio Voice. Users do not need an NGC login or a separate CUDA
+toolkit after downloading the correct package.
 
 Choose the release matching the installed GPU generation:
 
 | Download | GPUs |
 | --- | --- |
-| `linux-broadcast-0.1.0-rtx20-x86_64.tar` | GeForce RTX 20 and Quadro RTX |
-| `linux-broadcast-0.1.0-rtx30-x86_64.tar` | GeForce RTX 30 and RTX A-series |
-| `linux-broadcast-0.1.0-rtx40-x86_64.tar` | GeForce RTX 40 and RTX Ada |
-| `linux-broadcast-0.1.0-rtx50-x86_64.tar` | GeForce RTX 50 and RTX PRO Blackwell |
+| `linux-broadcast-0.2.0-rtx20-x86_64.tar` | GeForce RTX 20 and Quadro RTX |
+| `linux-broadcast-0.2.0-rtx30-x86_64.tar` | GeForce RTX 30 and RTX A-series |
+| `linux-broadcast-0.2.0-rtx40-x86_64.tar` | GeForce RTX 40 and RTX Ada |
+| `linux-broadcast-0.2.0-rtx50-x86_64.tar` | GeForce RTX 50 and RTX PRO Blackwell |
 
 Extract the matching archive and run its launcher:
 
 ```bash
-tar -xf linux-broadcast-0.1.0-rtx40-x86_64.tar
-cd linux-broadcast-0.1.0-rtx40-x86_64
+tar -xf linux-broadcast-0.2.0-rtx40-x86_64.tar
+cd linux-broadcast-0.2.0-rtx40-x86_64
 ./linux-broadcast
 ```
 
@@ -64,7 +64,7 @@ This is a public preview. The RTX 40 bundle is hardware-probed on a GeForce RTX
 4080. RTX 20, 30, and 50 bundles pass the same architecture, model, and runtime
 checks but still need compatibility reports from those GPUs.
 
-### Fedora, RHEL, and compatible distributions
+### Fedora, openSUSE, and compatible RPM distributions
 
 ```bash
 sudo dnf install ./linux-broadcast-<version>-rtx<series>.x86_64.rpm
@@ -263,9 +263,10 @@ The application automatically uses the plugin at
 ## Build RPM and DEB packages
 
 Each release package contains one GPU generation so downloads do not carry
-models that cannot run on the target machine. The compact profile contains the
-combined 48 kHz Noise + Room Echo model and the runtime libraries it loads. It
-does not contain cuDNN. NVIDIA files remain outside Git and are read from
+models that cannot run on the target machine. Every package contains all 48 kHz
+models used by Linux Broadcast and the measured CUDA, TensorRT, and NVIDIA AFX
+runtime closure needed by those models. Unused cuDNN and Studio Voice HQ files
+are deliberately excluded. NVIDIA files remain outside Git and are read from
 `AFX_SDK_ROOT` only while packaging.
 
 Build the RPM and DEB for a generation after installing its model variant into
@@ -292,9 +293,10 @@ build/releases/<version>/<series>/linux-broadcast-<version>-<series>.x86_64.rpm
 build/releases/<version>/<series>/linux-broadcast_<version>_<series>_amd64.deb
 ```
 
-The staging script copies only the combined model, required runtime libraries,
-and applicable license notices. It fails if cuDNN or a credential-like file is
-found in the staged tree. NGC configuration and credentials are never read into
+The staging script copies the five model files selected by the application for
+the target architecture, the measured runtime closure, and applicable license
+notices. It rejects cuDNN, Studio Voice HQ, and credential-like files. NGC
+configuration and credentials are never read into
 the package.
 
 Create the four uncompressed portable release archives with:
@@ -303,6 +305,20 @@ Create the four uncompressed portable release archives with:
 export AFX_SDK_ROOT=/path/to/Audio_Effects_SDK
 ./scripts/build-portable-releases.sh
 ```
+
+Build the complete twelve-artifact matrix against the Ubuntu 22.04 compatibility
+baseline with Podman, then publish the verified files to the configured Netcup
+host:
+
+```bash
+export AFX_SDK_ROOT=/path/to/Audio_Effects_SDK
+./scripts/build-jammy-releases.sh
+./scripts/publish-netcup-release.sh
+```
+
+`verify-release-artifact.sh` checks the selected GPU architecture, five models,
+runtime closure, native plugin, application, and NVIDIA license notices in each
+RPM, DEB, or portable archive before publication.
 
 ## Primary references
 

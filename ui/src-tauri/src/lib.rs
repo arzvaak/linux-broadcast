@@ -322,6 +322,10 @@ fn sdk_root() -> Result<PathBuf, String> {
             return Ok(path);
         }
     }
+    let system = PathBuf::from("/usr/lib/linux-broadcast/nvidia");
+    if system.join("nvafx/lib/libnv_audiofx.so").is_file() {
+        return Ok(system);
+    }
     env::var_os("HOME")
         .map(PathBuf::from)
         .map(|home| home.join(".local/share/linux-broadcast/nvidia/current"))
@@ -341,6 +345,10 @@ fn plugin_path() -> Result<PathBuf, String> {
         if installed.is_file() {
             return installed.canonicalize().map_err(|error| error.to_string());
         }
+    }
+    let system = PathBuf::from("/usr/lib/linux-broadcast/liblinux_broadcast_afx_ladspa.so");
+    if system.is_file() {
+        return system.canonicalize().map_err(|error| error.to_string());
     }
     if let Some(bundled) = env::var_os("LINUX_BROADCAST_BUNDLED_PLUGIN") {
         let path = PathBuf::from(bundled);

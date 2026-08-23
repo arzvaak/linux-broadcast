@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Linux Broadcast
+Comment=NVIDIA AFX voice processing for PipeWire
+Exec=linux-broadcast
+Icon=linux-broadcast
+Terminal=false
+Categories=AudioVideo;Audio;
+Keywords=microphone;noise;voice;NVIDIA;RTX;PipeWire;
+StartupWMClass=linux-broadcast

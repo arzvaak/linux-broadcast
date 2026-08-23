@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.arzvak.linuxbroadcast</id>
+  <name>Linux Broadcast</name>
+  <summary>NVIDIA AFX voice processing for PipeWire</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <description>
+    <p>Linux Broadcast creates a processed PipeWire microphone using NVIDIA AFX noise removal, room echo removal, BNR 2.0, and Studio Voice on compatible RTX GPUs.</p>
+  </description>
+  <launchable type="desktop-id">linux-broadcast.desktop</launchable>
+  <url type="homepage">https://arzvaak.github.io/linux-broadcast/</url>
+  <url type="bugtracker">https://github.com/arzvaak/linux-broadcast/issues</url>
+  <provides><binary>linux-broadcast</binary></provides>
+  <releases><release version="0.2.0" date="2026-08-23" /></releases>
+</component>

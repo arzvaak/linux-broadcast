@@ -1,0 +1,13 @@
+Package: linux-broadcast
+Version: @VERSION@
+Section: sound
+Priority: optional
+Architecture: amd64
+Installed-Size: @INSTALLED_SIZE@
+Maintainer: Ayush <arzvaak@users.noreply.github.com>
+Depends: libwebkit2gtk-4.1-0, libgtk-3-0, libayatana-appindicator3-1, pipewire-bin
+Homepage: https://arzvaak.github.io/linux-broadcast/
+Description: NVIDIA AFX voice processing for PipeWire
+ Linux Broadcast creates a processed virtual microphone with Noise Removal,
+ BNR 2.0, Room Echo Removal, Noise and Room Echo, and Studio Voice on
+ compatible NVIDIA RTX GPUs. The NVIDIA model and runtime payload is included.

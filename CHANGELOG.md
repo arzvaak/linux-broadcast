@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0 - 2026-08-23
+
+Complete self-contained Linux packages.
+
+- RPM, DEB, and portable builds for RTX 20, 30, 40, and 50 generations
+- Noise Removal, BNR 2.0, Room Echo, Noise + Room Echo, and Studio Voice models
+- Measured CUDA, TensorRT, and NVIDIA AFX runtime closure included; unused cuDNN and Studio Voice HQ payloads excluded
+- No NGC login, CUDA toolkit, or separate model download after installation
+- Dedicated GitHub Pages download homepage and Netcup artifact mirror
+
 ## 0.1.0 - 2026-08-23
 
 First public preview.

@@ -1,0 +1,39 @@
+Name:           linux-broadcast
+Version:        @VERSION@
+Release:        1%{?dist}
+Summary:        NVIDIA AFX voice processing for PipeWire
+License:        MIT AND LicenseRef-NVIDIA-Proprietary
+URL:            https://arzvaak.github.io/linux-broadcast/
+BuildArch:      x86_64
+AutoReqProv:    yes
+Requires:       /usr/bin/pw-cli
+Requires:       /usr/bin/pw-dump
+Requires:       /usr/bin/wpctl
+
+%global debug_package %{nil}
+%global _build_id_links none
+
+%description
+Linux Broadcast creates a processed virtual microphone with Noise Removal,
+BNR 2.0, Room Echo Removal, Noise and Room Echo, and Studio Voice on compatible
+NVIDIA RTX GPUs. The NVIDIA model and runtime payload is included.
+
+%prep
+
+%build
+
+%install
+mkdir -p %{buildroot}
+cp -al @PACKAGE_ROOT@/usr %{buildroot}/
+
+%files
+%license /usr/share/licenses/linux-broadcast/LICENSE
+/usr/bin/linux-broadcast
+/usr/lib/linux-broadcast/
+/usr/share/applications/linux-broadcast.desktop
+/usr/share/icons/hicolor/128x128/apps/linux-broadcast.png
+/usr/share/metainfo/com.arzvak.linuxbroadcast.metainfo.xml
+
+%changelog
+* Sun Aug 23 2026 Ayush <arzvaak@users.noreply.github.com> - @VERSION@-1
+- Complete self-contained RTX generation package

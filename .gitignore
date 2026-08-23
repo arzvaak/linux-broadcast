@@ -2,6 +2,7 @@
 /ui/dist/
 /ui/node_modules/
 /ui/src-tauri/target/
+/ui/src-tauri/target-jammy/
 .env
 *.trtpkg
 libnv_audiofx.so

@@ -1,6 +1,6 @@
 [package]
 name = "linux-broadcast"
-version = "0.1.0"
+version = "0.2.0"
 description = "NVIDIA AFX voice processing for Linux"
 authors = ["Ayush"]
 edition = "2021"

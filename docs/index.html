@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#070a08" />
+    <meta name="description" content="NVIDIA Broadcast-style RTX voice processing for Linux. One complete download with every supported model and required runtime included." />
+    <meta property="og:title" content="Linux Broadcast" />
+    <meta property="og:description" content="RTX voice processing for Linux. Complete, self-contained RPM, DEB and portable downloads." />
+    <meta property="og:image" content="https://arzvaak.github.io/linux-broadcast/og.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://arzvaak.github.io/linux-broadcast/" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Linux Broadcast" />
+    <meta name="twitter:description" content="Complete NVIDIA AFX voice processing for Linux." />
+    <meta name="twitter:image" content="https://arzvaak.github.io/linux-broadcast/og.png" />
+    <title>Linux Broadcast — RTX voice processing for Linux</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="grain" aria-hidden="true"></div>
+    <header class="nav shell">
+      <a class="brand" href="#top" aria-label="Linux Broadcast home">
+        <span class="brand-mark"><span></span></span>
+        <span>Linux Broadcast</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="#effects">Effects</a>
+        <a href="#download">Download</a>
+        <a href="https://github.com/arzvaak/linux-broadcast">GitHub ↗</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero shell">
+        <div class="hero-copy">
+          <p class="kicker"><span class="pulse"></span> Public preview · v0.2.0</p>
+          <h1>Your RTX voice.<br /><em>Finally native on Linux.</em></h1>
+          <p class="lede">NVIDIA AFX noise removal, room echo cleanup and Studio Voice, routed into a microphone every Linux app can use.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#download">Choose my download <span>↓</span></a>
+            <a class="button ghost" href="https://github.com/arzvaak/linux-broadcast">View source</a>
+          </div>
+          <p class="hero-note">No NGC login. No separate CUDA toolkit. Models and runtimes included.</p>
+        </div>
+        <div class="signal-card" aria-label="Voice processing signal visualization">
+          <div class="signal-head"><span>LINUX BROADCAST MICROPHONE</span><span class="live">LIVE</span></div>
+          <div class="wave" aria-hidden="true">
+            <i style="--h:22%"></i><i style="--h:44%"></i><i style="--h:31%"></i><i style="--h:72%"></i><i style="--h:91%"></i><i style="--h:58%"></i><i style="--h:82%"></i><i style="--h:43%"></i><i style="--h:64%"></i><i style="--h:28%"></i><i style="--h:76%"></i><i style="--h:48%"></i><i style="--h:89%"></i><i style="--h:54%"></i><i style="--h:34%"></i><i style="--h:68%"></i><i style="--h:39%"></i><i style="--h:17%"></i>
+          </div>
+          <div class="signal-route"><span>PHYSICAL MIC</span><b>→</b><span class="afx">NVIDIA AFX</span><b>→</b><span>PIPEWIRE</span></div>
+          <div class="meter"><span></span></div>
+          <div class="signal-meta"><span>48 kHz · mono</span><span>RTX accelerated</span></div>
+        </div>
+      </section>
+
+      <section id="effects" class="effects shell">
+        <div class="section-intro">
+          <p class="overline">The complete package</p>
+          <h2>Every live voice mode.<br />Nothing else to fetch.</h2>
+        </div>
+        <div class="effect-grid">
+          <article><span>01</span><h3>Noise Removal</h3><p>Fans, clicks, keyboard noise and busy rooms, cleaned in real time.</p></article>
+          <article><span>02</span><h3>BNR 2.0</h3><p>NVIDIA’s latest experimental broadcast noise model with VAD control.</p></article>
+          <article><span>03</span><h3>Room Echo</h3><p>Reduce the hollow reflections of untreated rooms and distant walls.</p></article>
+          <article><span>04</span><h3>Noise + Echo</h3><p>One model for the difficult rooms where both problems happen together.</p></article>
+          <article><span>05</span><h3>Studio Voice</h3><p>Low-latency voice restoration for live calls, recording and streaming.</p></article>
+        </div>
+      </section>
+
+      <section id="download" class="download-section">
+        <div class="shell download-shell">
+          <div class="section-intro">
+            <p class="overline">Download v0.2.0</p>
+            <h2>Pick your RTX.<br />We pack the rest.</h2>
+            <p class="download-copy">Each file includes the app, native PipeWire plugin, all five real-time effects, their models, the measured CUDA and TensorRT runtime closure, and NVIDIA license notices.</p>
+          </div>
+
+          <div class="chooser" aria-labelledby="chooser-title">
+            <h3 id="chooser-title">1. GPU generation</h3>
+            <div class="choices gpu-choices" role="radiogroup" aria-label="GPU generation">
+              <button type="button" role="radio" aria-checked="false" data-series="rtx20"><strong>RTX 20</strong><small>Turing · sm_75</small></button>
+              <button type="button" role="radio" aria-checked="false" data-series="rtx30"><strong>RTX 30</strong><small>Ampere · sm_86</small></button>
+              <button type="button" role="radio" aria-checked="true" data-series="rtx40" class="selected"><strong>RTX 40</strong><small>Ada · sm_89</small></button>
+              <button type="button" role="radio" aria-checked="false" data-series="rtx50"><strong>RTX 50</strong><small>Blackwell · sm_120</small></button>
+            </div>
+
+            <h3>2. Linux package</h3>
+            <div class="choices format-choices" role="radiogroup" aria-label="Linux package format">
+              <button type="button" role="radio" aria-checked="true" data-format="rpm" class="selected"><strong>.RPM</strong><small>Fedora · openSUSE · RPM-based</small></button>
+              <button type="button" role="radio" aria-checked="false" data-format="deb"><strong>.DEB</strong><small>Ubuntu · Debian · Mint · Pop!_OS</small></button>
+              <button type="button" role="radio" aria-checked="false" data-format="tar"><strong>Portable</strong><small>Arch · Gentoo · other x86_64</small></button>
+            </div>
+
+            <a id="downloadButton" class="download-button" href="https://arzvak.com/downloads/linux-broadcast/v0.2.0/linux-broadcast-0.2.0-rtx40.x86_64.rpm">
+              <span><b>Download for RTX 40</b><small id="downloadMeta">RPM · x86_64 · ~2.8 GB · complete package</small></span><span class="arrow">↓</span>
+            </a>
+            <div class="download-foot"><a href="https://arzvak.com/downloads/linux-broadcast/v0.2.0/SHA256SUMS">SHA256 checksums</a><span>·</span><a href="https://github.com/arzvaak/linux-broadcast/releases/tag/v0.2.0">Release notes</a></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="compat shell">
+        <div><p class="overline">Compatibility</p><h2>Built for the Linux audio stack.</h2></div>
+        <ul>
+          <li><b>GPU</b><span>GeForce RTX 20–50, Quadro RTX, RTX A, RTX Ada and RTX PRO Blackwell</span></li>
+          <li><b>System</b><span>x86_64 Linux, proprietary NVIDIA driver and a PipeWire desktop session</span></li>
+          <li><b>Desktop</b><span>GNOME, KDE Plasma and other WebKitGTK 4.1-capable environments</span></li>
+          <li><b>Apps</b><span>Discord, OBS, browsers, games and anything accepting a PipeWire microphone</span></li>
+        </ul>
+        <p class="boundary">GTX, AMD, Intel and ARM devices are not supported because NVIDIA does not provide compatible AFX models for them.</p>
+      </section>
+    </main>
+
+    <footer class="shell"><span>Linux Broadcast · built by Ayush</span><span>Not affiliated with or endorsed by NVIDIA.</span></footer>
+    <script src="app.js"></script>
+  </body>
+</html>
