@@ -14,7 +14,7 @@ function updateDownload() {
   const button = document.querySelector("#downloadButton");
   button.href = `${base}/${formats[format].file()}`;
   button.querySelector("b").textContent = `Download for ${names[series]}`;
-  document.querySelector("#downloadMeta").textContent = `${formats[format].label} · x86_64 · ~2.8 GB · complete package`;
+  document.querySelector("#downloadMeta").textContent = `${formats[format].label} · x86_64 · about 2.8 GB`;
 }
 
 function select(group, chosen, attribute) {
