@@ -41,9 +41,6 @@
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.png"
-    ],
-    "resources": {
-      "../../build/native-cmake/liblinux_broadcast_afx_ladspa.so": "lib/linux-broadcast/liblinux_broadcast_afx_ladspa.so"
-    }
+    ]
   }
 }
