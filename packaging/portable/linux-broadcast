@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+set -eu
+
+bundle_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+export AFX_SDK_ROOT="$bundle_dir/nvidia"
+export LINUX_BROADCAST_PLUGIN="$bundle_dir/liblinux_broadcast_afx_ladspa.so"
+exec "$bundle_dir/linux-broadcast-app" "$@"

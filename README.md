@@ -3,7 +3,8 @@
   <h1>Linux Broadcast</h1>
   <p>NVIDIA Broadcast-style voice processing for Linux, powered by NVIDIA AFX.</p>
   <p>
-    <img src="https://img.shields.io/badge/package-RPM%20%7C%20DEB-555555" alt="RPM and DEB packages">
+    <a href="https://github.com/arzvaak/linux-broadcast/releases"><img src="https://img.shields.io/github/v/release/arzvaak/linux-broadcast?include_prereleases" alt="Release"></a>
+    <a href="https://github.com/arzvaak/linux-broadcast/actions/workflows/ci.yml"><img src="https://github.com/arzvaak/linux-broadcast/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
     <a href="LICENSE"><img src="https://img.shields.io/github/license/arzvaak/linux-broadcast" alt="MIT License"></a>
     <img src="https://img.shields.io/badge/platform-Linux-111111" alt="Linux">
     <img src="https://img.shields.io/badge/GPU-NVIDIA%20RTX-76B900" alt="NVIDIA RTX">
@@ -30,20 +31,38 @@ denoising backends.
 
 ## Installation
 
-Linux Broadcast requires an RTX GPU, the proprietary NVIDIA driver, and
-PipeWire. Prebuilt packages contain the licensed NVIDIA runtime and one
-architecture-specific **Noise + Room Echo** model. They intentionally omit
-cuDNN, separate Noise Removal and Room Echo models, BNR 2.0, and Studio Voice.
-The application only offers effects whose models are installed.
+Linux Broadcast requires an RTX GPU, the proprietary NVIDIA driver, PipeWire,
+and WebKitGTK 4.1. The public preview provides uncompressed portable bundles
+from [GitHub Releases](https://github.com/arzvaak/linux-broadcast/releases).
+Each bundle contains the app, native plugin, licensed NVIDIA runtime, and one
+architecture-specific **Noise + Room Echo** model. The bundles intentionally
+omit cuDNN, separate Noise Removal and Room Echo models, BNR 2.0, and Studio
+Voice. The application only offers effects whose models are installed.
 
 Choose the release matching the installed GPU generation:
 
 | Download | GPUs |
 | --- | --- |
-| `RTX 20` | GeForce RTX 20 and Quadro RTX |
-| `RTX 30` | GeForce RTX 30 and RTX A-series |
-| `RTX 40` | GeForce RTX 40 and RTX Ada |
-| `RTX 50` | GeForce RTX 50 and RTX PRO Blackwell |
+| `linux-broadcast-0.1.0-rtx20-x86_64.tar` | GeForce RTX 20 and Quadro RTX |
+| `linux-broadcast-0.1.0-rtx30-x86_64.tar` | GeForce RTX 30 and RTX A-series |
+| `linux-broadcast-0.1.0-rtx40-x86_64.tar` | GeForce RTX 40 and RTX Ada |
+| `linux-broadcast-0.1.0-rtx50-x86_64.tar` | GeForce RTX 50 and RTX PRO Blackwell |
+
+Extract the matching archive and run its launcher:
+
+```bash
+tar -xf linux-broadcast-0.1.0-rtx40-x86_64.tar
+cd linux-broadcast-0.1.0-rtx40-x86_64
+./linux-broadcast
+```
+
+Verify the download with the accompanying `SHA256SUMS` file. Portable bundles
+are not registered with the system package manager. RPM and DEB builds remain
+available for maintainers using the packaging instructions below.
+
+This is a public preview. The RTX 40 bundle is hardware-probed on a GeForce RTX
+4080. RTX 20, 30, and 50 bundles pass the same architecture, model, and runtime
+checks but still need compatibility reports from those GPUs.
 
 ### Fedora, RHEL, and compatible distributions
 
@@ -61,9 +80,9 @@ sudo apt install ./linux-broadcast_<version>_rtx<series>_amd64.deb
 
 Remove it with `sudo apt remove linux-broadcast`.
 
-The installed application is available from the desktop menu or as
-`linux-broadcast`. Release packages use their bundled runtime automatically.
-Source builds use `AFX_SDK_ROOT` or
+RPM and DEB installations are available from the desktop menu or as
+`linux-broadcast`. Portable bundles are launched from their extracted
+directory. Source builds use `AFX_SDK_ROOT` or
 `~/.local/share/linux-broadcast/nvidia/current`.
 
 ## GPU and model selection
@@ -277,6 +296,13 @@ The staging script copies only the combined model, required runtime libraries,
 and applicable license notices. It fails if cuDNN or a credential-like file is
 found in the staged tree. NGC configuration and credentials are never read into
 the package.
+
+Create the four uncompressed portable release archives with:
+
+```bash
+export AFX_SDK_ROOT=/path/to/Audio_Effects_SDK
+./scripts/build-portable-releases.sh
+```
 
 ## Primary references
 
