@@ -188,6 +188,12 @@ monitoring, GPU architecture, and model/plugin readiness. Monitoring is off by
 default to prevent speaker feedback. Easy Effects is used as the monitoring
 source when available.
 
+While processing is running, the selected microphone reconnects automatically
+when it returns with the same PipeWire node name after a USB/Bluetooth
+disconnect. There is no need to press Stop and Start again. While it is absent,
+the filter waits without switching to another microphone. Pressing Stop removes
+the filter, so reconnecting a device cannot restart GPU processing.
+
 SDK-specific VAD and frame sizing live in the collapsed Advanced view. A
 prebuilt installation starts with Noise + Room Echo, 70% intensity, VAD off,
 and 20 ms frames. Every installed effect remembers its own tuning.
@@ -279,6 +285,15 @@ npm run tauri --prefix ui -- build --no-bundle
 The application automatically uses the plugin at
 `build/native-cmake/liblinux_broadcast_afx_ladspa.so`. `AFX_SDK_ROOT` and
 `LINUX_BROADCAST_PLUGIN` override the default SDK and plugin paths.
+
+With PipeWire and WirePlumber running, the live reconnect test uses temporary
+virtual microphones and a built-in copy filter. It needs no NVIDIA SDK and
+does not disconnect your physical microphone:
+
+```bash
+cargo test --manifest-path ui/src-tauri/Cargo.toml --locked \
+  reconnects_selected_source_without_restarting_filter -- --ignored
+```
 
 ## Build RPM and DEB packages
 

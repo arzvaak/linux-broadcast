@@ -514,11 +514,15 @@ fn spa_quote(value: &str) -> String {
     value.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
-fn module_command(intensity: f32, plugin: &Path) -> String {
+fn module_command(intensity: f32, plugin: &Path, source_name: &str) -> String {
+    // Let the session manager track the selected name across device/node ID
+    // changes. Linger without fallback so unplugging never selects another mic
+    // or the default source (which is our own virtual output while running).
     format!(
-        "load-module libpipewire-module-filter-chain {{ node.description = \"Linux Broadcast Microphone\" media.name = \"Linux Broadcast Microphone\" filter.graph = {{ nodes = [ {{ type = ladspa name = \"NVIDIA AFX\" plugin = \"{}\" label = \"linux_broadcast_bnr2\" control = {{ \"Intensity\" = {:.4} }} }} ] }} audio.rate = 48000 audio.position = [ MONO ] capture.props = {{ node.name = \"linux_broadcast.capture\" node.passive = true node.autoconnect = false node.dont-reconnect = true stream.dont-remix = true audio.position = [ MONO ] }} playback.props = {{ node.name = \"{}\" node.description = \"Linux Broadcast Microphone\" media.class = Audio/Source node.virtual = true }} }}\n",
+        "load-module libpipewire-module-filter-chain {{ node.description = \"Linux Broadcast Microphone\" media.name = \"Linux Broadcast Microphone\" filter.graph = {{ nodes = [ {{ type = ladspa name = \"NVIDIA AFX\" plugin = \"{}\" label = \"linux_broadcast_bnr2\" control = {{ \"Intensity\" = {:.4} }} }} ] }} audio.rate = 48000 audio.position = [ MONO ] capture.props = {{ node.name = \"linux_broadcast.capture\" node.passive = true node.autoconnect = true node.dont-reconnect = false node.dont-fallback = true node.dont-move = true node.linger = true target.object = \"{}\" stream.dont-remix = true audio.position = [ MONO ] }} playback.props = {{ node.name = \"{}\" node.description = \"Linux Broadcast Microphone\" media.class = Audio/Source node.virtual = true }} }}\n",
         spa_quote(&plugin.display().to_string()),
         intensity,
+        spa_quote(source_name),
         VIRTUAL_SOURCE_NAME,
     )
 }
@@ -544,7 +548,7 @@ fn runtime_library_path(sdk: &Path) -> String {
         .into_owned()
 }
 
-fn spawn_service(intensity: f32, effect_mode: &str, vad_enabled: bool, frame_ms: u32) -> Result<Child, String> {
+fn spawn_service(source_name: &str, intensity: f32, effect_mode: &str, vad_enabled: bool, frame_ms: u32) -> Result<Child, String> {
     let sdk = sdk_root()?;
     let plugin = plugin_path()?;
     let gpu = selected_gpu()?;
@@ -562,7 +566,7 @@ fn spawn_service(intensity: f32, effect_mode: &str, vad_enabled: bool, frame_ms:
         .stderr(Stdio::null())
         .spawn()
         .map_err(|error| format!("Could not start PipeWire controller: {error}"))?;
-    let module = module_command(intensity, &plugin);
+    let module = module_command(intensity, &plugin, source_name);
     let write_result = child
         .stdin
         .as_mut()
@@ -607,8 +611,29 @@ fn link_nodes(source_name: &str, target_name: &str) -> Result<(), String> {
     Err(format!("Could not connect {source_name} to {target_name}"))
 }
 
-fn link_microphone(source_name: &str) -> Result<(), String> {
-    link_nodes(source_name, "linux_broadcast.capture")
+fn wait_for_microphone_link(source_name: &str, capture_name: &str) -> Result<(), String> {
+    let deadline = Instant::now() + Duration::from_secs(4);
+    while Instant::now() < deadline {
+        let raw = command_output("pw-dump", &[])?;
+        let objects: Vec<Value> = serde_json::from_str(&raw).map_err(|error| error.to_string())?;
+        let find_node = |name: &str| objects.iter().find_map(|object| {
+            (object["type"] == "PipeWire:Interface:Node"
+                && object["info"]["props"]["node.name"] == name)
+                .then(|| object["id"].as_u64()).flatten()
+        });
+        if let (Some(source), Some(capture)) = (find_node(source_name), find_node(capture_name)) {
+            if objects.iter().any(|object| {
+                object["type"] == "PipeWire:Interface:Link"
+                    && object["info"]["output-node-id"].as_u64() == Some(source)
+                    && object["info"]["input-node-id"].as_u64() == Some(capture)
+                    && matches!(object["info"]["state"].as_str(), Some("active" | "paused"))
+            }) {
+                return Ok(());
+            }
+        }
+        thread::sleep(Duration::from_millis(80));
+    }
+    Err(format!("Could not connect {source_name} to {capture_name}"))
 }
 
 fn stop_child(child: &mut Child) {
@@ -757,8 +782,8 @@ fn start_processing(
         service.monitor_sink_name.clone()
     });
     stop_locked(&mut process);
-    let mut child = spawn_service(intensity, &effect_mode, vad_enabled, frame_ms)?;
-    if let Err(error) = link_microphone(&microphone.name) {
+    let mut child = spawn_service(&microphone.name, intensity, &effect_mode, vad_enabled, frame_ms)?;
+    if let Err(error) = wait_for_microphone_link(&microphone.name, "linux_broadcast.capture") {
         stop_child(&mut child);
         return Err(error);
     }
@@ -1009,6 +1034,9 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("Linux Broadcast Tauri runtime failed");
 }
+
+#[cfg(test)]
+mod pipewire_tests;
 
 #[cfg(test)]
 mod tests {
