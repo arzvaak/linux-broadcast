@@ -210,6 +210,26 @@ The release build can also be installed or removed from the terminal:
 The service installs only into the current user's `~/.local` and
 `~/.config/systemd/user` directories; it does not require root.
 
+The service runs with normal desktop-session permissions so GTK/glycin and
+WebKit can start their own sandboxed helpers. It allows at most three starts
+within 60 seconds, with five seconds between automatic restarts, to stop rapid
+crash loops. Reinstalling the service clears its failure counter.
+
+If an older installation aborts while loading icons through glycin/bubblewrap
+(especially with gdk-pixbuf 2.44 on Arch), update the unit from this checkout:
+
+```bash
+install -Dm644 systemd/linux-broadcast.service "$HOME/.config/systemd/user/linux-broadcast.service"
+systemctl --user daemon-reload
+systemctl --user reset-failed linux-broadcast.service
+systemctl --user restart linux-broadcast.service
+```
+
+This updates the service without rebuilding the app. Future uses of **Start at
+login** should use an updated app build, which embeds the unit. If the service
+still fails, inspect `journalctl --user -u linux-broadcast.service -b` and any
+local overrides shown by `systemctl --user cat linux-broadcast.service`.
+
 ## Build from source
 
 The source build requires CMake 3.20 or newer, a C++20 compiler, LADSPA

@@ -208,6 +208,7 @@ fn install_login_service() -> Result<(), String> {
     )?;
     command_output("systemctl", &["--user", "daemon-reload"])?;
     command_output("systemctl", &["--user", "reenable", "linux-broadcast.service"])?;
+    command_output("systemctl", &["--user", "reset-failed", "linux-broadcast.service"])?;
     Ok(())
 }
 
