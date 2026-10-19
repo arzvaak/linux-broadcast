@@ -1,4 +1,4 @@
-const version = "0.2.0";
+const version = "0.2.1";
 const base = `https://arzvak.com/downloads/linux-broadcast/v${version}`;
 let series = "rtx40";
 let format = "rpm";

@@ -10,3 +10,6 @@ libnv_audiofx.so
 *.installing-*
 *.log
 .DS_Store
+
+ui/test-results/
+ui/playwright-report/

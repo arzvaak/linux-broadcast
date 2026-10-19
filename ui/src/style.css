@@ -10,7 +10,7 @@
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; min-width: 560px; min-height: 560px; overflow: hidden; background: #090b0a; }
+body { margin: 0; min-width: 560px; min-height: 560px; overflow-x: hidden; overflow-y: auto; background: #090b0a; }
 button, select, input { font: inherit; }
 
 #app {
@@ -141,4 +141,18 @@ input[type="range"]:disabled { opacity: .24; cursor: not-allowed; }
   .tuning-row { grid-template-columns: 1fr auto; }
   .latency-setting { margin-left: 0; text-align: left; }
   .hardware strong { max-width: 170px; }
+}
+
+/* Expanded tuning and smaller windows must remain reachable by wheel and keyboard. */
+.device-state { margin: 0 0 10px; color: #e8bd78; font-size: var(--type-xs); line-height: 1.5; }
+.device-state:empty { display: none; }
+button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--green); outline-offset: 4px; }
+button:disabled, select:disabled { cursor: not-allowed; }
+.notice { max-width: calc(100vw - 32px); pointer-events: none; }
+.tuning-row { grid-template-columns: minmax(100px, 1fr) auto minmax(90px, 1fr) minmax(134px, 170px); }
+.frame-select { min-width: 0; }
+.frame-select select { width: 100%; }
+@media (max-width: 650px) {
+  .tuning-row { grid-template-columns: 1fr auto; }
+  .latency-setting { margin-left: 0; text-align: left; }
 }

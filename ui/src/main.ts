@@ -26,6 +26,11 @@ type ProcessingStatus = {
 
 let processing = false;
 let systemReady = false;
+let actionPending = false;
+let refreshing = false;
+let actionGeneration = 0;
+let microphones: Microphone[] = [];
+let outputs: OutputDevice[] = [];
 let noticeTimer: number | undefined;
 
 const app = document.querySelector<HTMLElement>("#app")!;
@@ -45,6 +50,7 @@ app.innerHTML = `
         <label for="microphone"><span>Microphone</span><small>Input source</small></label>
         <div class="select-wrap"><select id="microphone"><option>Detecting microphones…</option></select><span>⌄</span></div>
       </div>
+      <p id="deviceState" class="device-state" role="status"></p>
       <div class="divider"></div>
       <div class="control-row effect-row">
         <label for="effect"><span>Effect</span><small>NVIDIA AFX</small></label>
@@ -95,7 +101,7 @@ app.innerHTML = `
       </div>
       <div class="divider"></div>
       <div class="settings-row">
-        <label for="startAtLogin"><span>Start at login</span><small>Launch hidden with your saved microphone and NVIDIA AFX settings.</small></label>
+        <label for="startAtLogin"><span>Start at login</span><small>Launch ready in the tray. GPU processing stays off until you press Start.</small></label>
         <button id="startAtLogin" class="toggle" aria-pressed="false"><i></i></button>
       </div>
     </div>
@@ -168,7 +174,8 @@ function rememberedVad(mode: string) {
 
 function loadRememberedTuning(mode: string) {
   const defaults = tuningDefaults[mode] ?? tuningDefaults.noise;
-  const rememberedIntensity = Number(window.localStorage.getItem(`linux-broadcast.intensity.${mode}`));
+  const savedIntensity = window.localStorage.getItem(`linux-broadcast.intensity.${mode}`);
+  const rememberedIntensity = savedIntensity === null ? NaN : Number(savedIntensity);
   strength.value = String(
     Number.isFinite(rememberedIntensity) && rememberedIntensity >= 0 && rememberedIntensity <= 100
       ? rememberedIntensity
@@ -227,7 +234,7 @@ function showStatus(status: SystemStatus) {
   power.title = systemReady ? "Start voice processing" : "The AFX model and native plugin must both be ready";
 }
 
-function showProcessing(status: ProcessingStatus) {
+function showProcessing(status: ProcessingStatus, preserveTuning = false) {
   processing = status.running;
   const power = document.querySelector<HTMLButtonElement>("#power")!;
   power.classList.toggle("active", processing);
@@ -242,15 +249,16 @@ function showProcessing(status: ProcessingStatus) {
     document.querySelector<HTMLSelectElement>("#monitorOutput")!.value = status.monitorSinkName;
   }
   if (status.sourceName) {
-    document.querySelector<HTMLSelectElement>("#microphone")!.value = status.sourceName;
+    updateDeviceOptions(document.querySelector<HTMLSelectElement>("#microphone")!, microphones, status.sourceName);
   }
-  if (status.running) {
+  if (status.running && !preserveTuning) {
     document.querySelector<HTMLSelectElement>("#effect")!.value = status.effectMode;
     strength.value = String(Math.round(status.intensity * 100));
     setVad(status.vadEnabled);
     document.querySelector<HTMLSelectElement>("#frameSize")!.value = String(status.frameMs);
     showEffect(status.effectMode);
   }
+  updateInteraction();
 }
 
 function showNotice(message: string, error = false) {
@@ -287,20 +295,103 @@ function showBackgroundSettings(settings: BackgroundSettings) {
   background.setAttribute("aria-label", `${settings.runInBackground ? "Disable" : "Enable"} background mode`);
   background.disabled = settings.startAtLogin;
   background.title = settings.startAtLogin ? "Turn off Start at login first" : "";
+  login.disabled = false;
   login.classList.toggle("active", settings.startAtLogin);
   login.setAttribute("aria-pressed", String(settings.startAtLogin));
   login.setAttribute("aria-label", `${settings.startAtLogin ? "Disable" : "Enable"} start at login`);
 }
 
+// Keep unavailable selections visible, so reconnect never silently chooses another mic.
+function updateDeviceOptions(select: HTMLSelectElement, devices: { name: string; description: string }[], selected = select.value) {
+  const options = devices.map(device => new Option(device.description, device.name));
+  if (selected && !devices.some(device => device.name === selected)) {
+    const previous = select.selectedOptions[0]?.textContent?.replace(/ · disconnected$/, "") ?? selected;
+    options.unshift(new Option(`${previous} · disconnected`, selected));
+  }
+  if (!options.length) options.push(new Option("No device connected", ""));
+  // Do not replace a native popup's options on every poll when nothing changed.
+  if (JSON.stringify(options.map(option => [option.value, option.text])) !==
+      JSON.stringify(Array.from(select.options, option => [option.value, option.text]))) {
+    select.replaceChildren(...options);
+  }
+  if (selected) select.value = selected;
+}
+
+function updateInteraction() {
+  const mic = document.querySelector<HTMLSelectElement>("#microphone")!;
+  const connected = microphones.some(device => device.name === mic.value);
+  document.querySelector("#deviceState")!.textContent = !connected && mic.value
+    ? processing ? "Microphone disconnected — waiting for it to return" : "Microphone disconnected — reconnect it or choose another input"
+    : "";
+  document.querySelector<HTMLButtonElement>("#power")!.disabled = actionPending || (!processing && (!systemReady || !connected));
+  for (const id of ["microphone", "effect", "strength", "vad", "frameSize", "resetTuning", "monitor", "monitorOutput"]) {
+    const control = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | HTMLButtonElement;
+    control.disabled = actionPending;
+  }
+  const mode = selectedEffect();
+  strength.disabled ||= mode === "studio_voice";
+  document.querySelector<HTMLButtonElement>("#vad")!.disabled ||= !vadEffects.has(mode);
+  document.querySelector<HTMLSelectElement>("#frameSize")!.disabled ||= mode === "studio_voice";
+  document.querySelector<HTMLSelectElement>("#effect")!.disabled ||= !systemReady;
+  document.querySelector<HTMLButtonElement>("#monitor")!.disabled ||= !processing;
+  document.querySelector<HTMLSelectElement>("#monitorOutput")!.disabled ||= outputs.length === 0;
+  app.setAttribute("aria-busy", String(actionPending));
+}
+
+function onProcessingAction(selector: string, event: string, action: () => Promise<void>) {
+  document.querySelector(selector)!.addEventListener(event, async () => {
+    if (actionPending) return;
+    actionGeneration++;
+    actionPending = true;
+    updateInteraction();
+    try {
+      await action();
+    } finally {
+      // A failed rebuild can stop processing: always reflect backend truth.
+      try { showProcessing(await invoke<ProcessingStatus>("processing_status")); }
+      catch (error) { showNotice(String(error), true); }
+      actionPending = false;
+      updateInteraction();
+    }
+  });
+}
+
+async function refreshDevices() {
+  if (refreshing || actionPending) return;
+  refreshing = true;
+  const generation = actionGeneration;
+  try {
+    const [inputs, sinks, status] = await Promise.all([
+      invoke<Microphone[]>("list_microphones"),
+      invoke<OutputDevice[]>("list_outputs"),
+      invoke<ProcessingStatus>("processing_status"),
+    ]);
+    if (actionPending || generation !== actionGeneration) return;
+    microphones = inputs;
+    outputs = sinks;
+    updateDeviceOptions(document.querySelector<HTMLSelectElement>("#microphone")!, microphones);
+    updateDeviceOptions(document.querySelector<HTMLSelectElement>("#monitorOutput")!, outputs);
+    // Avoid overwriting a tuning gesture with a periodic snapshot.
+    showProcessing(status, processing === status.running);
+    updateInteraction();
+  } catch (error) {
+    showNotice(`Could not refresh audio devices: ${String(error)}`, true);
+  } finally {
+    refreshing = false;
+  }
+}
+
 async function load() {
   try {
-    const [status, microphones, outputs, service, background] = await Promise.all([
+    const [status, inputDevices, outputDevices, service, background] = await Promise.all([
       invoke<SystemStatus>("system_status"),
       invoke<Microphone[]>("list_microphones"),
       invoke<OutputDevice[]>("list_outputs"),
       invoke<ProcessingStatus>("processing_status"),
       invoke<BackgroundSettings>("background_settings"),
     ]);
+    microphones = inputDevices;
+    outputs = outputDevices;
     showBackgroundSettings(background);
     showStatus(status);
     const select = document.querySelector<HTMLSelectElement>("#microphone")!;
@@ -332,25 +423,15 @@ async function load() {
     }
     showEffect(effectSelect.value);
     showProcessing(service);
-    if (!service.running && systemReady && selected) {
-      const started = await invoke<ProcessingStatus>("start_processing", {
-        sourceName: selected,
-        intensity: Number(strength.value) / 100,
-        effectMode: selectedEffect(),
-        vadEnabled: selectedVad(),
-        frameMs: selectedFrameMs(),
-      });
-      showProcessing(started);
-    }
   } catch (error) {
     showInitializationFailure(error);
   }
 }
 
-document.querySelector("#microphone")!.addEventListener("change", async () => {
+onProcessingAction("#microphone", "change", async () => {
   const select = document.querySelector<HTMLSelectElement>("#microphone")!;
   window.localStorage.setItem("linux-broadcast.microphone", select.value);
-  if (!systemReady) return;
+  if (!systemReady || !processing) return;
   try {
     const status = await invoke<ProcessingStatus>("start_processing", {
       sourceName: select.value,
@@ -366,7 +447,7 @@ document.querySelector("#microphone")!.addEventListener("change", async () => {
   }
 });
 
-document.querySelector("#effect")!.addEventListener("change", async () => {
+onProcessingAction("#effect", "change", async () => {
   const effect = selectedEffect();
   window.localStorage.setItem("linux-broadcast.effect", effect);
   loadRememberedTuning(effect);
@@ -387,7 +468,7 @@ document.querySelector("#effect")!.addEventListener("change", async () => {
   }
 });
 
-document.querySelector("#monitor")!.addEventListener("click", async () => {
+onProcessingAction("#monitor", "click", async () => {
   if (!processing) {
     showNotice("Start Linux Broadcast before monitoring", true);
     return;
@@ -409,7 +490,7 @@ document.querySelector("#monitor")!.addEventListener("click", async () => {
   }
 });
 
-document.querySelector("#monitorOutput")!.addEventListener("change", async () => {
+onProcessingAction("#monitorOutput", "change", async () => {
   const button = document.querySelector<HTMLButtonElement>("#monitor")!;
   if (!processing || !button.classList.contains("active")) return;
   try {
@@ -423,9 +504,9 @@ document.querySelector("#monitorOutput")!.addEventListener("change", async () =>
   }
 });
 
-document.querySelector("#power")!.addEventListener("click", async () => {
+onProcessingAction("#power", "click", async () => {
   const power = document.querySelector<HTMLButtonElement>("#power")!;
-  if (!systemReady || power.disabled) return;
+  if (!systemReady && !processing) return;
   power.disabled = true;
   try {
     const status = processing
@@ -446,7 +527,7 @@ document.querySelector("#power")!.addEventListener("click", async () => {
   }
 });
 
-strength.addEventListener("change", async () => {
+onProcessingAction("#strength", "change", async () => {
   window.localStorage.setItem(`linux-broadcast.intensity.${selectedEffect()}`, strength.value);
   if (!processing) return;
   try {
@@ -464,7 +545,7 @@ strength.addEventListener("change", async () => {
   }
 });
 
-document.querySelector("#vad")!.addEventListener("click", async () => {
+onProcessingAction("#vad", "click", async () => {
   if (!vadEffects.has(selectedEffect())) return;
   setVad(!selectedVad());
   window.localStorage.setItem(`linux-broadcast.vad.${selectedEffect()}`, String(selectedVad()));
@@ -484,7 +565,7 @@ document.querySelector("#vad")!.addEventListener("click", async () => {
   }
 });
 
-document.querySelector("#frameSize")!.addEventListener("change", async () => {
+onProcessingAction("#frameSize", "change", async () => {
   const frame = document.querySelector<HTMLSelectElement>("#frameSize")!;
   window.localStorage.setItem(`linux-broadcast.frame.${selectedEffect()}`, frame.value);
   showEffect(selectedEffect());
@@ -504,7 +585,7 @@ document.querySelector("#frameSize")!.addEventListener("change", async () => {
   }
 });
 
-document.querySelector("#resetTuning")!.addEventListener("click", async () => {
+onProcessingAction("#resetTuning", "click", async () => {
   const effect = selectedEffect();
   for (const setting of ["intensity", "vad", "frame"]) {
     window.localStorage.removeItem(`linux-broadcast.${setting}.${effect}`);
@@ -566,11 +647,14 @@ document.querySelector("#startAtLogin")!.addEventListener("click", async () => {
       enabled: !button.classList.contains("active"),
     });
     showBackgroundSettings(settings);
-    showNotice(settings.startAtLogin ? "Linux Broadcast will start hidden at login" : "Start at login disabled");
+    showNotice(settings.startAtLogin ? "Linux Broadcast will start idle in the tray" : "Start at login disabled");
   } catch (error) {
     showNotice(String(error), true);
     button.disabled = false;
   }
 });
 
-void load();
+void load().then(() => {
+  window.setInterval(() => void refreshDevices(), 2000);
+  window.addEventListener("focus", () => void refreshDevices());
+});

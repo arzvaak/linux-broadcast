@@ -694,7 +694,7 @@ fn stop_locked(process: &mut Option<ServiceProcess>) {
 }
 
 #[tauri::command]
-fn system_status() -> Result<SystemStatus, String> {
+async fn system_status() -> Result<SystemStatus, String> {
     let gpu = selected_gpu()?;
     let effects = sdk_root()
         .map(|sdk| available_effects(&sdk, gpu.architecture))
@@ -710,17 +710,17 @@ fn system_status() -> Result<SystemStatus, String> {
 }
 
 #[tauri::command]
-fn list_microphones() -> Result<Vec<Microphone>, String> {
+async fn list_microphones() -> Result<Vec<Microphone>, String> {
     list_physical_microphones()
 }
 
 #[tauri::command]
-fn list_outputs() -> Result<Vec<OutputDevice>, String> {
+async fn list_outputs() -> Result<Vec<OutputDevice>, String> {
     list_output_devices()
 }
 
 #[tauri::command]
-fn processing_status(state: tauri::State<'_, ServiceState>) -> Result<ProcessingStatus, String> {
+async fn processing_status(state: tauri::State<'_, ServiceState>) -> Result<ProcessingStatus, String> {
     let mut process = state.process.lock().map_err(|_| "Service state lock failed")?;
     if process.as_mut().is_some_and(|service| service.child.try_wait().ok().flatten().is_some()) {
         let source_name = process.as_ref().map(|service| service.source_name.clone());
@@ -748,7 +748,7 @@ fn processing_status(state: tauri::State<'_, ServiceState>) -> Result<Processing
 }
 
 #[tauri::command]
-fn start_processing(
+async fn start_processing(
     source_name: String,
     intensity: f32,
     effect_mode: String,
@@ -849,7 +849,7 @@ fn start_processing(
 }
 
 #[tauri::command]
-fn stop_processing(state: tauri::State<'_, ServiceState>) -> Result<ProcessingStatus, String> {
+async fn stop_processing(state: tauri::State<'_, ServiceState>) -> Result<ProcessingStatus, String> {
     let mut process = state.process.lock().map_err(|_| "Service state lock failed")?;
     let source_name = process.as_ref().map(|service| service.source_name.clone());
     stop_locked(&mut process);
@@ -869,7 +869,7 @@ fn stop_processing(state: tauri::State<'_, ServiceState>) -> Result<ProcessingSt
 }
 
 #[tauri::command]
-fn set_monitoring(
+async fn set_monitoring(
     enabled: bool,
     sink_name: Option<String>,
     state: tauri::State<'_, ServiceState>,
@@ -902,14 +902,14 @@ fn set_monitoring(
 }
 
 #[tauri::command]
-fn background_settings(state: tauri::State<'_, PreferencesState>) -> Result<BackgroundSettings, String> {
+async fn background_settings(state: tauri::State<'_, PreferencesState>) -> Result<BackgroundSettings, String> {
     let mut settings = state.settings.lock().map_err(|_| "Preferences state lock failed")?;
     settings.start_at_login = command_output("systemctl", &["--user", "is-enabled", "linux-broadcast.service"]).is_ok();
     Ok(settings.clone())
 }
 
 #[tauri::command]
-fn set_run_in_background(
+async fn set_run_in_background(
     enabled: bool,
     state: tauri::State<'_, PreferencesState>,
 ) -> Result<BackgroundSettings, String> {
@@ -923,7 +923,7 @@ fn set_run_in_background(
 }
 
 #[tauri::command]
-fn set_start_at_login(
+async fn set_start_at_login(
     enabled: bool,
     state: tauri::State<'_, PreferencesState>,
 ) -> Result<BackgroundSettings, String> {

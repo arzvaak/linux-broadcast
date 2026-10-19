@@ -43,16 +43,16 @@ Choose the release matching the installed GPU generation:
 
 | Download | GPUs |
 | --- | --- |
-| `linux-broadcast-0.2.0-rtx20-x86_64.tar` | GeForce RTX 20 and Quadro RTX |
-| `linux-broadcast-0.2.0-rtx30-x86_64.tar` | GeForce RTX 30 and RTX A-series |
-| `linux-broadcast-0.2.0-rtx40-x86_64.tar` | GeForce RTX 40 and RTX Ada |
-| `linux-broadcast-0.2.0-rtx50-x86_64.tar` | GeForce RTX 50 and RTX PRO Blackwell |
+| `linux-broadcast-0.2.1-rtx20-x86_64.tar` | GeForce RTX 20 and Quadro RTX |
+| `linux-broadcast-0.2.1-rtx30-x86_64.tar` | GeForce RTX 30 and RTX A-series |
+| `linux-broadcast-0.2.1-rtx40-x86_64.tar` | GeForce RTX 40 and RTX Ada |
+| `linux-broadcast-0.2.1-rtx50-x86_64.tar` | GeForce RTX 50 and RTX PRO Blackwell |
 
 Extract the matching archive and run its launcher:
 
 ```bash
-tar -xf linux-broadcast-0.2.0-rtx40-x86_64.tar
-cd linux-broadcast-0.2.0-rtx40-x86_64
+tar -xf linux-broadcast-0.2.1-rtx40-x86_64.tar
+cd linux-broadcast-0.2.1-rtx40-x86_64
 ./linux-broadcast
 ```
 
@@ -203,8 +203,9 @@ The Settings page contains the two lifecycle controls:
 - **Run in background** closes the window to the tray while keeping NVIDIA AFX
   and the virtual microphone active.
 - **Start at login** installs and enables a user-level systemd service. It
-  launches the app hidden with the saved microphone, effect, and tuning.
-  Enabling it also enables background mode.
+  launches the app hidden and ready in the tray, but does not load NVIDIA AFX
+  or start GPU processing until **Start** is pressed. Enabling it also enables
+  background mode.
 
 The release build can also be installed or removed from the terminal:
 

@@ -26,4 +26,4 @@ systemctl --user daemon-reload
 systemctl --user reenable linux-broadcast.service
 systemctl --user reset-failed linux-broadcast.service
 systemctl --user restart linux-broadcast.service
-printf 'Linux Broadcast is installed and running in the background.\n'
+printf 'Linux Broadcast is installed and idle in the background. GPU processing starts from the app.\n'

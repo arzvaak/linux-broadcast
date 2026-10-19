@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.1 - 2026-10-19
+
+More reliable microphone reconnection and processing controls.
+
+- Resume the selected microphone route when its PipeWire source returns after a disconnect
+- Keep the tray app idle until Start is pressed, and remove AFX processing when Stop is pressed
+- Refresh device choices while preserving a disconnected selection
+- Keep settings and tuning controls responsive through processing changes and recover after backend errors
+
 ## 0.2.0 - 2026-08-23
 
 Complete self-contained Linux packages.

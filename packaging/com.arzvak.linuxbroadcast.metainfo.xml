@@ -12,5 +12,12 @@
   <url type="homepage">https://arzvaak.github.io/linux-broadcast/</url>
   <url type="bugtracker">https://github.com/arzvaak/linux-broadcast/issues</url>
   <provides><binary>linux-broadcast</binary></provides>
-  <releases><release version="0.2.0" date="2026-08-23" /></releases>
+  <releases>
+    <release version="0.2.1" date="2026-10-19">
+      <description>
+        <p>Improves microphone reconnection and processing controls.</p>
+      </description>
+    </release>
+    <release version="0.2.0" date="2026-08-23" />
+  </releases>
 </component>
