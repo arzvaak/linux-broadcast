@@ -12,10 +12,25 @@ Environment=WEBKIT_DISABLE_DMABUF_RENDERER=1
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=8
-# Issue #1: RestrictSUIDSGID breaks glycin/bwrap on affected desktops.
-# This is a desktop session application. GTK/glycin and WebKit launch their
-# own sandboxed helpers. Outer namespace/seccomp/privilege restrictions can
-# prevent those helpers from starting (including bubblewrap image loaders).
+# Keep native desktop helpers sandboxed without the glycin/bwrap regression (#1).
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+LockPersonality=true
+# The reporter isolated this option as the cause of the Arch/glycin crash.
+RestrictSUIDSGID=false
+# ProtectSystem=strict also covers HOME. Keep only application state, caches,
+# user login controls, and the desktop runtime directory writable.
+Environment=XDG_CACHE_HOME=%h/.cache/linux-broadcast
+Environment=CUDA_CACHE_PATH=%h/.cache/linux-broadcast/cuda
+ReadWritePaths=%h/.config/linux-broadcast %h/.config/systemd/user
+ReadWritePaths=%h/.local/share/com.arzvak.linuxbroadcast %h/.cache/linux-broadcast %t
 UMask=0077
 
 [Install]

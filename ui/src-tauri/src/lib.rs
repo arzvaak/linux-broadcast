@@ -217,6 +217,13 @@ fn install_login_service() -> Result<(), String> {
         return Ok(());
     }
     let home = env::var_os("HOME").map(PathBuf::from).ok_or_else(|| "Could not locate HOME".to_owned())?;
+    for path in [
+        home.join(".config/linux-broadcast"),
+        home.join(".local/share/com.arzvak.linuxbroadcast"),
+        home.join(".cache/linux-broadcast"),
+    ] {
+        fs::create_dir_all(path).map_err(|error| error.to_string())?;
+    }
     let executable = env::current_exe().map_err(|error| error.to_string())?;
     let installed_executable = home.join(".local/bin/linux-broadcast");
     let installed_plugin = home.join(".local/lib/linux-broadcast/liblinux_broadcast_afx_ladspa.so");

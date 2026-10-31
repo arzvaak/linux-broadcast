@@ -15,6 +15,12 @@ binary_destination="$HOME/.local/bin/linux-broadcast"
 plugin_destination="$HOME/.local/lib/linux-broadcast/liblinux_broadcast_afx_ladspa.so"
 unit_destination="$HOME/.config/systemd/user/linux-broadcast.service"
 
+# Create these before loading the unit: strict filesystem protection requires
+# each explicitly writable directory to exist at service startup.
+install -d -m700 "$HOME/.config/linux-broadcast" \
+  "$HOME/.config/systemd/user" "$HOME/.local/share/com.arzvak.linuxbroadcast" \
+  "$HOME/.cache/linux-broadcast"
+
 install -Dm755 "$binary" "$binary_destination.installing"
 mv -f -- "$binary_destination.installing" "$binary_destination"
 install -Dm755 "$plugin" "$plugin_destination.installing"
