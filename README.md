@@ -17,6 +17,13 @@ Noise Removal, experimental **BNR 2.0**, Room Echo Removal, combined Noise +
 Room Echo, and Studio Voice Low Latency models. There are no substitute
 denoising backends.
 
+## Container edition
+
+The public GHCR container edition avoids rebuilding separate
+GPU-generation packages. It keeps NVIDIA dependencies in reusable image layers.
+See [container installation and maintainer instructions](docs/container.md).
+Existing native packages remain available during the transition.
+
 ## Features
 
 - NVIDIA Noise Removal and experimental BNR 2.0

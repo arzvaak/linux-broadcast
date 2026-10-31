@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.2 - 2026-10-31
+
+- Public all-RTX container distribution with reusable AFX runtime layers
+- Rootless desktop launcher, persistent settings, and host login-service integration
+- Manual digest promotion on GitHub Actions; heavy builds stay local
+- Newer PipeWire clients to read device metadata from current hosts
+- Preserve the issue #1 glycin/bubblewrap fix and bounded service restarts
+
 ## 0.2.1 - 2026-10-19
 
 More reliable microphone reconnection and processing controls.

@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+set -euo pipefail
+fail() { printf 'Linux Broadcast: %s\n' "$*" >&2; exit 1; }
+image="${LINUX_BROADCAST_IMAGE:-ghcr.io/arzvaak/linux-broadcast:stable}"
+name="linux-broadcast-${UID}"
+engine="${LINUX_BROADCAST_ENGINE:-}"
+if [[ -z "$engine" ]]; then
+  if command -v podman >/dev/null; then engine=podman; else engine=docker; fi
+fi
+command -v "$engine" >/dev/null || fail 'Install rootless Podman or Docker first.'
+case "${1:-}" in
+  --stop) exec "$engine" stop "$name" ;;
+  --update)
+    [[ "$("$engine" inspect --format '{{.State.Running}}' "$name" 2>/dev/null || true)" != true ]] || fail 'Stop the app with --stop before updating.'
+    exec "$engine" pull "$image" ;;
+  --help)
+    printf 'Usage: linux-broadcast-container [--background|--stop|--update]\nOverride image with LINUX_BROADCAST_IMAGE; engine with LINUX_BROADCAST_ENGINE.\n'; exit 0 ;;
+esac
+[[ $# -eq 0 || ( $# -eq 1 && "$1" == --background ) ]] || fail 'Unknown option; use --help.'
+runtime="${XDG_RUNTIME_DIR:-/run/user/$UID}"
+[[ -S "$runtime/pipewire-0" ]] || fail 'PipeWire socket is unavailable; run this from your graphical desktop session.'
+[[ -S "$runtime/bus" ]] || fail 'Session D-Bus is unavailable; run this from your graphical desktop session.'
+if command -v busctl >/dev/null && busctl --user --quiet status com.arzvak.linuxbroadcast.SingleInstance >/dev/null 2>&1; then
+  fail 'The native Linux Broadcast app is running. Quit it before launching the container edition.'
+fi
+if [[ "$("$engine" inspect --format '{{.State.Running}}' "$name" 2>/dev/null || true)" == true ]]; then
+  if [[ "${1:-}" == --background ]]; then exec "$engine" wait "$name"; fi
+  exec "$engine" exec "$name" /usr/local/bin/linux-broadcast
+fi
+command -v nvidia-smi >/dev/null || fail 'Install the NVIDIA driver first (nvidia-smi is required).'
+state="${LINUX_BROADCAST_CONTAINER_STATE:-${XDG_DATA_HOME:-$HOME/.local/share}/linux-broadcast-container}"
+mkdir -p "$state/home/.config/linux-broadcast" "$state/runtime"
+chmod 700 "$state/runtime"
+# Preferences are imported once; the native application's files are never overwritten.
+if [[ ! -f "$state/home/.config/linux-broadcast/preferences.json" && -f "$HOME/.config/linux-broadcast/preferences.json" ]]; then
+  cp "$HOME/.config/linux-broadcast/preferences.json" "$state/home/.config/linux-broadcast/preferences.json"
+fi
+args=(run --rm --init --name "$name" --device nvidia.com/gpu=all
+  --user "$(id -u):$(id -g)" --cap-drop ALL
+  --env HOME=/home/broadcast --env XDG_CACHE_HOME=/home/broadcast/.cache
+  --mount "type=bind,src=$state/runtime,dst=$runtime"
+  --env "XDG_RUNTIME_DIR=$runtime"
+  --env "DBUS_SESSION_BUS_ADDRESS=unix:path=$runtime/bus"
+  --env LINUX_BROADCAST_CONTAINER=1
+  --mount "type=bind,src=$state/home,dst=/home/broadcast"
+  --mount "type=bind,src=$runtime/pipewire-0,dst=$runtime/pipewire-0"
+  --mount "type=bind,src=$runtime/bus,dst=$runtime/bus")
+if [[ "$(basename "$engine")" == podman ]]; then
+  args+=(--userns=keep-id)
+  # Session sockets must retain their existing SELinux labels.
+  if [[ -e /sys/fs/selinux/enforce ]]; then args+=(--security-opt label=disable); fi
+fi
+if [[ -n "${WAYLAND_DISPLAY:-}" ]]; then
+  wayland="$WAYLAND_DISPLAY"; [[ "$wayland" == /* ]] || wayland="$runtime/$wayland"
+  [[ -S "$wayland" ]] || fail 'The Wayland display socket is unavailable.'
+  args+=(--env "WAYLAND_DISPLAY=$WAYLAND_DISPLAY" --mount "type=bind,src=$wayland,dst=$wayland")
+elif [[ -n "${DISPLAY:-}" ]]; then
+  [[ -d /tmp/.X11-unix ]] || fail 'X11 display sockets are unavailable.'
+  args+=(--env "DISPLAY=$DISPLAY" --mount type=bind,src=/tmp/.X11-unix,dst=/tmp/.X11-unix,ro)
+  authority="${XAUTHORITY:-$HOME/.Xauthority}"
+  if [[ -f "$authority" ]]; then
+    args+=(--env XAUTHORITY=/tmp/broadcast.xauthority --mount "type=bind,src=$authority,dst=/tmp/broadcast.xauthority,ro")
+  fi
+else fail 'No Wayland or X11 desktop session was found.'; fi
+if [[ -S "$runtime/at-spi/bus" ]]; then
+  mkdir -p "$state/runtime/at-spi"
+  args+=(--mount "type=bind,src=$runtime/at-spi/bus,dst=$runtime/at-spi/bus")
+fi
+# An engine-specific CDI directory can be supplied for rootless toolkit installations.
+cdi="${LINUX_BROADCAST_CDI_DIR:-}"
+if [[ -z "$cdi" && -f "$state/cdi/nvidia.yaml" && "$(basename "$engine")" == podman ]]; then cdi="$state/cdi"; fi
+engine_args=()
+if [[ -n "$cdi" ]]; then
+  [[ "$(basename "$engine")" == podman ]] || fail 'Custom CDI directories require Podman.'
+  engine_args+=(--cdi-spec-dir "$cdi")
+fi
+exec "$engine" "${engine_args[@]}" "${args[@]}" "$image" "$@"

@@ -12,6 +12,7 @@ Environment=WEBKIT_DISABLE_DMABUF_RENDERER=1
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=8
+# Issue #1: RestrictSUIDSGID breaks glycin/bwrap on affected desktops.
 # This is a desktop session application. GTK/glycin and WebKit launch their
 # own sandboxed helpers. Outer namespace/seccomp/privilege restrictions can
 # prevent those helpers from starting (including bubblewrap image loaders).

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Linux Broadcast (Container)
+Comment=NVIDIA voice processing for PipeWire
+Exec=linux-broadcast-container
+Icon=linux-broadcast-container
+Terminal=false
+Categories=AudioVideo;Audio;
+StartupWMClass=linux-broadcast

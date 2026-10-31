@@ -1,0 +1,31 @@
+ARG RUNTIME_IMAGE=ghcr.io/arzvaak/linux-broadcast-runtime@sha256:1a950b7eefde67907e00523bedbfc1529e2089fa3dafd491fdb6f5712be97865
+FROM docker.io/library/node:22-bookworm-slim@sha256:4b150b48b4116e2a22f2c39cc27025fbf4f153e2078fd3b14d159fdb5c7279da AS node
+FROM docker.io/library/rust:1.97-bookworm@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 AS build
+COPY --from=node /usr/local/ /usr/local/
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    cmake ladspa-sdk pkg-config libwebkit2gtk-4.1-dev libayatana-appindicator3-dev \
+    librsvg2-dev libxdo-dev && rm -rf /var/lib/apt/lists/*
+WORKDIR /source
+COPY ui/package.json ui/package-lock.json ui/
+RUN npm ci --prefix ui
+# Runtime contains redistributable libraries; headers are passed separately at build time.
+COPY native/ native/
+COPY sdk-headers/ /sdk/
+RUN cmake -S native -B /build/native -DAFX_SDK_ROOT=/sdk -DBUILD_TESTING=ON \
+    && cmake --build /build/native --target linux-broadcast-afx-ladspa gpu-model-test --parallel && ctest --test-dir /build/native --output-on-failure
+COPY ui/ ui/
+COPY systemd/ systemd/
+COPY packaging/container/tauri.conf.json /container-tauri.conf.json
+RUN npm run tauri --prefix ui -- build --no-bundle --config /container-tauri.conf.json
+
+FROM ${RUNTIME_IMAGE}
+ARG VERSION=0.2.2
+ARG REVISION=unknown
+COPY --from=build /source/ui/src-tauri/target/release/linux-broadcast /usr/local/bin/linux-broadcast
+COPY --from=build /build/native/liblinux_broadcast_afx_ladspa.so /usr/local/lib/
+COPY LICENSE /usr/share/licenses/linux-broadcast/LICENSE
+LABEL org.opencontainers.image.source="https://github.com/arzvaak/linux-broadcast" \
+    org.opencontainers.image.version="${VERSION}" \
+    org.opencontainers.image.revision="${REVISION}" \
+    org.opencontainers.image.licenses="MIT AND LicenseRef-NVIDIA-Software-License-Agreement"
+ENTRYPOINT ["/usr/local/bin/linux-broadcast"]

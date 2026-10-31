@@ -183,7 +183,39 @@ fn install_file(source: &Path, destination: &Path, mode: u32) -> Result<(), Stri
     result
 }
 
+fn login_service_name() -> &'static str {
+    if env::var_os("LINUX_BROADCAST_CONTAINER").is_some() {
+        "linux-broadcast-container.service"
+    } else {
+        "linux-broadcast.service"
+    }
+}
+
+fn container_login_command(method: &str, signature: &str, arguments: &[&str]) -> Result<String, String> {
+    let mut args = vec!["--user", "call", "org.freedesktop.systemd1", "/org/freedesktop/systemd1",
+        "org.freedesktop.systemd1.Manager", method, signature];
+    args.extend_from_slice(arguments);
+    command_output("busctl", &args)
+}
+
+fn login_service_enabled() -> bool {
+    if env::var_os("LINUX_BROADCAST_CONTAINER").is_some() {
+        container_login_command("GetUnitFileState", "s", &[login_service_name()])
+            .map(|value| matches!(value.trim(), r#"s "enabled""# | r#"s "enabled-runtime""#))
+            .unwrap_or(false)
+    } else {
+        command_output("systemctl", &["--user", "is-enabled", login_service_name()]).is_ok()
+    }
+}
+
 fn install_login_service() -> Result<(), String> {
+    if env::var_os("LINUX_BROADCAST_CONTAINER").is_some() {
+        // The user manager runs on the host and owns the installed launcher unit.
+        // Never copy a container executable into the host native installation.
+        container_login_command("EnableUnitFiles", "asbb", &["1", login_service_name(), "false", "false"])?;
+        container_login_command("ResetFailedUnit", "s", &[login_service_name()])?;
+        return Ok(());
+    }
     let home = env::var_os("HOME").map(PathBuf::from).ok_or_else(|| "Could not locate HOME".to_owned())?;
     let executable = env::current_exe().map_err(|error| error.to_string())?;
     let installed_executable = home.join(".local/bin/linux-broadcast");
@@ -904,7 +936,7 @@ async fn set_monitoring(
 #[tauri::command]
 async fn background_settings(state: tauri::State<'_, PreferencesState>) -> Result<BackgroundSettings, String> {
     let mut settings = state.settings.lock().map_err(|_| "Preferences state lock failed")?;
-    settings.start_at_login = command_output("systemctl", &["--user", "is-enabled", "linux-broadcast.service"]).is_ok();
+    settings.start_at_login = login_service_enabled();
     Ok(settings.clone())
 }
 
@@ -930,7 +962,11 @@ async fn set_start_at_login(
     if enabled {
         install_login_service()?;
     } else {
-        let _ = command_output("systemctl", &["--user", "disable", "linux-broadcast.service"]);
+        if env::var_os("LINUX_BROADCAST_CONTAINER").is_some() {
+            container_login_command("DisableUnitFiles", "asb", &["1", login_service_name(), "false"])?;
+        } else {
+            let _ = command_output("systemctl", &["--user", "disable", login_service_name()]);
+        }
     }
     let mut settings = state.settings.lock().map_err(|_| "Preferences state lock failed")?;
     settings.start_at_login = enabled;

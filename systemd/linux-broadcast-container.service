@@ -1,0 +1,20 @@
+[Unit]
+Description=Linux Broadcast container desktop application
+After=graphical-session.target pipewire.service wireplumber.service
+PartOf=graphical-session.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/linux-broadcast-container --background
+ExecStop=%h/.local/bin/linux-broadcast-container --stop
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+# Issue #1: RestrictSUIDSGID breaks glycin/bubblewrap on affected desktops.
+# Keep GTK/WebKit's own sandbox functional; do not nest incompatible restrictions.
+UMask=0077
+
+[Install]
+WantedBy=graphical-session.target

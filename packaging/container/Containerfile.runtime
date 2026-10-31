@@ -1,0 +1,15 @@
+FROM docker.io/library/debian:trixie-slim@sha256:918311b7b6c4c6f68b232ba516584925f6c78ad82b6fd534b98979df6438e483
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates libwebkit2gtk-4.1-0 libayatana-appindicator3-1 librsvg2-2 \
+    libxdo3 pipewire-bin wireplumber systemd dbus libgl1-mesa-dri libglx-mesa0 \
+    libnss3 libasound2t64 fonts-dejavu-core && rm -rf /var/lib/apt/lists/*
+# Context contains only the explicitly staged runtime, never the source SDK/credentials.
+COPY nvidia/ /opt/linux-broadcast/nvidia/
+ENV AFX_SDK_ROOT=/opt/linux-broadcast/nvidia \
+    LINUX_BROADCAST_PLUGIN=/usr/local/lib/liblinux_broadcast_afx_ladspa.so \
+    WEBKIT_DISABLE_DMABUF_RENDERER=1 LIBGL_ALWAYS_SOFTWARE=1 \
+    HOME=/home/broadcast
+RUN mkdir -p /home/broadcast/.config && chmod 1777 /home/broadcast /home/broadcast/.config
+LABEL org.opencontainers.image.source="https://github.com/arzvaak/linux-broadcast" \
+    org.opencontainers.image.title="Linux Broadcast AFX 2.1.0 runtime" \
+    org.opencontainers.image.licenses="LicenseRef-NVIDIA-Software-License-Agreement"

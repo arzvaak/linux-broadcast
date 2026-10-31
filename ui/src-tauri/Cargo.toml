@@ -1,6 +1,6 @@
 [package]
 name = "linux-broadcast"
-version = "0.2.1"
+version = "0.2.2"
 description = "NVIDIA AFX voice processing for Linux"
 authors = ["Ayush"]
 edition = "2021"
@@ -10,12 +10,12 @@ name = "linux_broadcast_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build = { version = "2.7.3", features = [] }
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-tauri = { version = "2", features = ["tray-icon"] }
+tauri = { version = "2.12.4", features = ["tray-icon"] }
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
-tauri-plugin-single-instance = "2"
+tauri-plugin-single-instance = "2.5.4"
