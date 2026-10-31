@@ -20,12 +20,12 @@ esac
 runtime="${XDG_RUNTIME_DIR:-/run/user/$UID}"
 [[ -S "$runtime/pipewire-0" ]] || fail 'PipeWire socket is unavailable; run this from your graphical desktop session.'
 [[ -S "$runtime/bus" ]] || fail 'Session D-Bus is unavailable; run this from your graphical desktop session.'
-if command -v busctl >/dev/null && busctl --user --quiet status com.arzvak.linuxbroadcast.SingleInstance >/dev/null 2>&1; then
-  fail 'The native Linux Broadcast app is running. Quit it before launching the container edition.'
-fi
 if [[ "$("$engine" inspect --format '{{.State.Running}}' "$name" 2>/dev/null || true)" == true ]]; then
   if [[ "${1:-}" == --background ]]; then exec "$engine" wait "$name"; fi
   exec "$engine" exec "$name" /usr/local/bin/linux-broadcast
+fi
+if command -v busctl >/dev/null && busctl --user --quiet status com.arzvak.linuxbroadcast.SingleInstance >/dev/null 2>&1; then
+  fail 'The native Linux Broadcast app is running. Quit it before launching the container edition.'
 fi
 command -v nvidia-smi >/dev/null || fail 'Install the NVIDIA driver first (nvidia-smi is required).'
 state="${LINUX_BROADCAST_CONTAINER_STATE:-${XDG_DATA_HOME:-$HOME/.local/share}/linux-broadcast-container}"

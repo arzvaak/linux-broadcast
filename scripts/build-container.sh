@@ -29,7 +29,9 @@ cp -L "$AFX_SDK_ROOT/nvafx/lib/libnv_audiofx.so" "$stage/app/sdk-headers/nvafx/l
 cp -L "$AFX_SDK_ROOT/features/denoiser/lib/"*.so "$stage/app/sdk-headers/features/denoiser/lib/"
 build_args=()
 if [[ "$(basename "$engine")" == podman ]]; then
-  for base in docker.io/library/node:22-bookworm-slim docker.io/library/rust:1.97-bookworm; do
+  bases=("$runtime")
+  while read -r base; do bases+=("$base"); done < <(awk '$1 == "FROM" && $2 ~ /^docker.io\// {print $2}' "$root/packaging/container/Containerfile")
+  for base in "${bases[@]}"; do
     "$engine" image exists "$base" || "$engine" pull "$base"
   done
   # Never replace the runtime just built locally with an older remote tag.

@@ -33,3 +33,7 @@
 - User approved implementation/public publishing; no extra plan approval required.
 - Source baseline: 1fe96d8 plus existing local dependency fixes copied into isolated checkout.
 - Issue #1 reporter confirms main fixed; do not re-add hardening without platform evidence.
+
+- Live verification: all five AFX effects processed 48000 finite output samples each; real PD200X-to-container plugin-to-host virtual source reached running state, output discarded.
+- Fixed live runtime failures: old PipeWire 0.3.65 JSON incompatibility, writable runtime directory, persistent WebKit storage, and host systemctl offline unit-file operations.
+- Review fixes: shared native/container single-instance D-Bus identity, explicit unit stop, Xauthority fallback, and fresh-cache runtime pre-pull.

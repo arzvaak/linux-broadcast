@@ -985,7 +985,9 @@ pub fn run() {
     }
     let start_hidden = env::args_os().any(|argument| argument == "--background");
     tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, arguments, _| {
+        .plugin(tauri_plugin_single_instance::Builder::new()
+            .dbus_id("com.arzvak.linuxbroadcast")
+            .callback(|app, arguments, _| {
             if arguments.iter().any(|argument| argument == "--background") {
                 return;
             }
@@ -994,7 +996,7 @@ pub fn run() {
                 let _ = window.unminimize();
                 let _ = window.set_focus();
             }
-        }))
+        }).build())
         .manage(ServiceState::default())
         .manage(PreferencesState::default())
         .setup(move |app| {
