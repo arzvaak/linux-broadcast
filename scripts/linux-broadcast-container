@@ -9,7 +9,13 @@ if [[ -z "$engine" ]]; then
 fi
 command -v "$engine" >/dev/null || fail 'Install rootless Podman or Docker first.'
 case "${1:-}" in
-  --stop) exec "$engine" stop "$name" ;;
+  --stop)
+    if "$engine" inspect "$name" >/dev/null 2>&1; then
+      "$engine" stop "$name" || {
+        [[ "$("$engine" inspect --format '{{.State.Running}}' "$name" 2>/dev/null || true)" != true ]] || exit 1
+      }
+    fi
+    exit 0 ;;
   --update)
     [[ "$("$engine" inspect --format '{{.State.Running}}' "$name" 2>/dev/null || true)" != true ]] || fail 'Stop the app with --stop before updating.'
     exec "$engine" pull "$image" ;;

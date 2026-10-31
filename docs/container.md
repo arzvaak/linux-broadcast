@@ -111,3 +111,17 @@ not use privileged mode or disable the WebKit application sandbox by default.
 An Arch/glycin report does not establish that every container/runtime combination
 works: validate actual GTK/WebKit startup, rather than restoring restrictions
 based only on unit syntax.
+
+## Validation for 0.2.2
+
+Validated locally on Fedora/GNOME Wayland with an RTX 4080 SUPER: rootless GPU
+access, all five effects processing test frames, the PD200X → container AFX plugin
+→ host PipeWire virtual source, device enumeration/default input, persistent app
+home, existing-instance activation, cross-edition single-instance forwarding, and
+host service adoption/shutdown. The image uses PipeWire 1.4.2 clients, verified
+against a PipeWire 1.6.9 host. The earlier Debian 12/0.3.65 combination produced
+malformed device JSON and is not the released runtime.
+
+X11, Docker, physical USB unplug/replug, and RTX 20/30/50 hardware are not verified
+by these checks. The image includes their models; model presence is not a hardware
+compatibility test. Automated routing checks do not replace listening for quality.

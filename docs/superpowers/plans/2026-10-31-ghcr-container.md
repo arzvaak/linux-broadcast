@@ -22,12 +22,12 @@
 - Persistent state and host login toggle survive container replacement.
 
 ## Tasks
-- [ ] Add a small local launcher-contract test for engine arguments, reuse, and missing prerequisites; observe failure.
-- [ ] Add container launcher, installer, runtime staging and layered Containerfiles; keep runtime build context explicit.
-- [ ] Add container-aware host login service control and existing-container window activation.
-- [ ] Run focused shell/Rust/frontend checks locally, build image, test actual GPU/PipeWire/desktop behavior.
-- [ ] Add manual GHCR publishing workflow and installation documentation; keep existing release downloads.
-- [ ] Review changes once; fix material findings; publish image and verify anonymous pull; commit/push source and report verification limits.
+- [x] Add a small local launcher-contract test for engine arguments, reuse, and missing prerequisites; observe failure.
+- [x] Add container launcher, installer, runtime staging and layered Containerfiles; keep runtime build context explicit.
+- [x] Add container-aware host login service control and existing-container window activation.
+- [x] Run focused shell/Rust/frontend checks locally, build image, test actual GPU/PipeWire/desktop behavior.
+- [x] Add manual GHCR publishing workflow and installation documentation; keep existing release downloads.
+- [x] Review changes once; fix material findings; publish image and verify anonymous pull; commit/push source and report verification limits.
 
 ## Execution ledger
 - User approved implementation/public publishing; no extra plan approval required.
@@ -37,3 +37,6 @@
 - Live verification: all five AFX effects processed 48000 finite output samples each; real PD200X-to-container plugin-to-host virtual source reached running state, output discarded.
 - Fixed live runtime failures: old PipeWire 0.3.65 JSON incompatibility, writable runtime directory, persistent WebKit storage, and host systemctl offline unit-file operations.
 - Review fixes: shared native/container single-instance D-Bus identity, explicit unit stop, Xauthority fallback, and fresh-cache runtime pre-pull.
+
+- Final validation: three launcher contract checks, six Rust tests, frontend build, native GPU-model test in image build, rootless GPU access, all five DSP effects, live PipeWire route, device JSON/default input, persistent home, cross-edition single-instance forwarding, and adopted-unit stop (0.16 s) passed. X11 and RTX20/30/50 hardware remain unverified.
+- User requested no further interruptions to their running app; all remaining work is registry/source publication and read-only verification.
